@@ -1,6 +1,27 @@
+#define RIGHT_MOTOR 2
+#define LEFT_MOTOR 0
+#define DEFAULT_SPEED 50
+
+int rightMotorSpeed = DEFAULT_SPEED;
+int leftMotorSpeed = DEFAULT_SPEED;
+
 void main() 
 {
+    int i;
+    int values[10];
+    
+    printf("Put robot on tape. ");
+    printf("Press start\n");
+    while(start_button() == 0);
+    
+    
+    
+    for( i = 0; i < 10; i++ ) {
+        values[i] = analog(6);
+    }
+        
     while(1) {
+        motor(LEFT_MOTOR, rightMotorSpeed);
         printf("%d\n", analog(6));
     }
 }
