@@ -1,7 +1,7 @@
 #define RIGHT_MOTOR 2
 #define LEFT_MOTOR 0
 #define DEFAULT_SPEED 50
-#define RIGHT 2
+#define RIGHT 1
 #define LEFT 0
 
 int rightMotorSpeed = DEFAULT_SPEED;
@@ -24,13 +24,13 @@ int getInitialAverage()
 void checkSensorReading(int average)
 {
     int currentReading = analog(6);
-    float luminousThreashold = 0.05;
+    float luminousThreashold = 0.30;
     int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreashold));
-        
+      
     /* if the difference is greater than 20% try turning */
     if(significantDifference) {
         
-        alloff();
+        //alloff();
         
         /* check last turn and turn the opposite direction */
         if(lastTurn == LEFT) {
@@ -47,7 +47,7 @@ void checkSensorReading(int average)
         }
         else {
             //turnLeft();
-            turn(LEFT);
+            
             lastTurn = LEFT;
             
             /* if after turning the reading is worse, undo the turn */
@@ -64,19 +64,18 @@ void checkSensorReading(int average)
 
 void resetPosition(int direction)
 {
-    int initialTime;
+    int initialTime = (int)seconds();
     int elapsedTime;
     
     if( direction == RIGHT ) {
-        motor(RIGHT_MOTOR, 40);
-        motor(LEFT_MOTOR, -40);
+        motor(RIGHT_MOTOR, 50);
+        motor(LEFT_MOTOR, 0);
     }
     else {
-        motor(RIGHT_MOTOR, -40);
-        motor(LEFT_MOTOR, 40);
+        motor(RIGHT_MOTOR, 0);
+        motor(LEFT_MOTOR, 50);
     }
     
-    initialTime = (int)seconds();
     while((initialTime + 1) != elapsedTime) {
         elapsedTime = (int)seconds();
     }
@@ -84,19 +83,18 @@ void resetPosition(int direction)
 
 void turn(int direction)
 {
-    int initialTime;
+    int initialTime = (int)seconds();
     int elapsedTime;
     
     if( direction == RIGHT ) {
-        motor(RIGHT_MOTOR, -40);
-        motor(LEFT_MOTOR, 40);
+        motor(RIGHT_MOTOR, -50);
+        motor(LEFT_MOTOR, 0);
     }
     else {
-        motor(RIGHT_MOTOR, 40);
-        motor(LEFT_MOTOR, -40);
+        motor(RIGHT_MOTOR, 0);
+        motor(LEFT_MOTOR, -50);
     }
     
-    initialTime = (int)seconds();
     while((initialTime + 1) != elapsedTime) {
         elapsedTime = (int)seconds();
     }
