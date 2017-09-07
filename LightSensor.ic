@@ -24,26 +24,35 @@ int getInitialAverage()
 void checkSensorReading(int average)
 {
     int currentReading = analog(6);
+    float luminousThreashold = 0.30;
+    int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreashold));
+      
     /* if the difference is greater than 20% try turning */
-    if((float)(average - currentReading) > ((float)average * .2)) {
+    if(significantDifference) {
         
         alloff();
         
         /* check last turn and turn the opposite direction */
         if(lastTurn == LEFT) {
-            turnRight();
+            //turnRight();
+            turn(RIGHT);
             lastTurn = RIGHT;
+            resetPosition(RIGHT);
             /* if after turning the reading is worse, undo the turn */
             if( analog(6) < currentReading ) {
-                turnLeft();
+                turn(LEFT);
+                //turnLeft();
             }            
         }
         else {
-            turnLeft();
+            //turnLeft();
+            
             lastTurn = LEFT;
+            resetPosition(LEFT);
             /* if after turning the reading is worse, undo the turn */
             if( analog(6) < currentReading ) {
-                turnRight();
+                turn(RIGHT);
+                //turnRight();
             }
         }
     }
@@ -51,12 +60,70 @@ void checkSensorReading(int average)
     
 }
 
+void resetPosition(int direction)
+{
+    int initialTime = (int)seconds();
+    int elapsedTime;
+    
+    if( direction == RIGHT ) {
+        motor(RIGHT_MOTOR, 50);
+        motor(LEFT_MOTOR, 0);
+    }
+    else {
+        motor(RIGHT_MOTOR, 0);
+        motor(LEFT_MOTOR, 50);
+    }
+    
+    while((initialTime + 1) != elapsedTime) {
+        elapsedTime = (int)seconds();
+    }
+}
+
+void turn(int direction)
+{
+    int initialTime = (int)seconds();
+    int elapsedTime;
+    
+    if( direction == RIGHT ) {
+        motor(RIGHT_MOTOR, -50);
+        motor(LEFT_MOTOR, 0);
+    }
+    else {
+        motor(RIGHT_MOTOR, 0);
+        motor(LEFT_MOTOR, -50);
+    }
+    
+    while((initialTime + 1) != elapsedTime) {
+        elapsedTime = (int)seconds();
+    }
+}
+
 void turnRight() 
 {
+    int intialTime = (int)seconds();
+    int elapsedTime;
+    
+    motor(RIGHT_MOTOR, -50);
+    motor(LEFT_MOTOR, 0);
+    while((intialTime + 1) != elapsedTime) {
+        elapsedTime = (int)seconds();
+    }
+    
+    alloff();
 }
 
 void turnLeft()
 {
+    int initialTime = (int)seconds();
+    int elapsedTime;
+    
+    motor(RIGHT_MOTOR, 0);
+    motor(LEFT_MOTOR, -50);
+    while((initialTime + 1) != elapsedTime) {
+        elapsedTime = (int)seconds();
+    }
+    
+    alloff();
 }
 
 /* moves the robot */
@@ -79,8 +146,9 @@ void main()
     average = getInitialAverage();
     printf("Average: %d\n", average);
     
-        
+    
     while(1) {
+        move();
         checkSensorReading(average);
     }
 }
