@@ -24,7 +24,7 @@ int getInitialAverage()
 int checkSensorReading(int average)
 {
     int currentReading = analog(6);
-    float luminousThreshold = .20;
+    float luminousThreshold = .30;
     int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreshold));
     printf("checkSensorReading");
     return significantDifference;
@@ -43,26 +43,14 @@ void initiateTurnSequence(int average)
     /* check last turn and turn the opposite direction */
     if(lastTurn == LEFT) {
         turn(RIGHT, average);
-        if( foundTape ) {
-            lastTurn = RIGHT;
-        }
-        
-            /* if after turning the reading is worse, undo the turn */
-        if( analog(6) < currentReading ) {
+        if( !foundTape ) {
             resetPosition(RIGHT, average);
-            lastTurn = LEFT;
-        }            
+        }              
     }
     else {
         turn(LEFT, average);
-        if( foundTape ) {
-            lastTurn = LEFT;
-        }
-           
-        /* if after turning the reading is worse, undo the turn */
-        if( analog(6) < currentReading ) {
+        if( !foundTape ) {
             resetPosition(LEFT, average);
-            lastTurn = RIGHT;
         }
     }   
 }
@@ -73,11 +61,18 @@ void resetPosition(int direction, int average)
     printf("resetPosition\n");
     while( significantDifference ) {
         motor(direction, 80);
-        motor(!direction, -80);
+        motor(!direction, 15);
         significantDifference = checkSensorReading(average);
     }
+    foundTape = 1;
+    lastTurn = !lastTurn;
 }
 
+/*
+ * turn in the specified direction.
+ * turn for 2 seconds , meanwhile 
+ * constantly evaluate if it finds the black line
+ */
 void turn(int direction, int average)
 {
     int initialTime = (int)seconds();
@@ -85,8 +80,8 @@ void turn(int direction, int average)
     int significantDifference = 1;
     printf("turn\n");
     while( significantDifference && ((initialTime + 1) >= elapsedTime) ) {
-        motor(direction, -55);
-        motor(!direction, 55);
+        motor(direction, -80);
+        motor(!direction, 15);
         elapsedTime = (int)seconds();
         significantDifference = checkSensorReading(average);
     }
@@ -100,15 +95,14 @@ void turn(int direction, int average)
 void move()
 {
     printf("move\n");
-    motor(LEFT_MOTOR, 50);
-    motor(RIGHT_MOTOR, 50);
+    motor(LEFT_MOTOR, 100);
+    motor(RIGHT_MOTOR, 100);
 }
 
 void main() 
 {   
     int average;
-    int initialTime;
-    int elapsedTime;
+    
     /* Starting prompt for user */
     printf("Put robot on tape. ");
     printf("Press start.\n"); 
