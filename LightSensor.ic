@@ -7,6 +7,7 @@
 int rightMotorSpeed = DEFAULT_SPEED;
 int leftMotorSpeed = DEFAULT_SPEED;
 int lastTurn = 0;
+int foundTape = 1;
 
 /* returns the initial average of light input before starting */
 int getInitialAverage()
@@ -20,119 +21,85 @@ int getInitialAverage()
     return (average/=10);
 }
 
-/* Checks the sensor readings and turn if need be */
-void checkSensorReading(int average)
+int checkSensorReading(int average)
 {
     int currentReading = analog(6);
-    float luminousThreashold = 0.05;
-    int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreashold));
-        
+    float luminousThreshold = .20;
+    int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreshold));
+    printf("checkSensorReading");
+    return significantDifference;
+}
+
+/* Checks the sensor readings and turn if need be */
+void initiateTurnSequence(int average)
+{
+    //int significantDifference = checkSensorReading(average);
+    int currentReading = analog(6);
     /* if the difference is greater than 20% try turning */
-    if(significantDifference) {
-        
-        alloff();
-        
-        /* check last turn and turn the opposite direction */
-        if(lastTurn == LEFT) {
-            //turnRight();
-            turn(RIGHT);
-            lastTurn = RIGHT;
-            
-            /* if after turning the reading is worse, undo the turn */
-            if( analog(6) < currentReading ) {
-                resetPosition(RIGHT);
-                turn(LEFT);
-                //turnLeft();
-            }            
-        }
-        else {
-            //turnLeft();
-            turn(LEFT);
-            lastTurn = LEFT;
-            
-            /* if after turning the reading is worse, undo the turn */
-            if( analog(6) < currentReading ) {
-                resetPosition(LEFT);
-                turn(RIGHT);
-                //turnRight();
-            }
-        }
-    }
-    
-    
-}
-
-void resetPosition(int direction)
-{
-    int initialTime;
-    int elapsedTime;
-    
-    if( direction == RIGHT ) {
-        motor(RIGHT_MOTOR, 40);
-        motor(LEFT_MOTOR, -40);
-    }
-    else {
-        motor(RIGHT_MOTOR, -40);
-        motor(LEFT_MOTOR, 40);
-    }
-    
-    initialTime = (int)seconds();
-    while((initialTime + 1) != elapsedTime) {
-        elapsedTime = (int)seconds();
-    }
-}
-
-void turn(int direction)
-{
-    int initialTime;
-    int elapsedTime;
-    
-    if( direction == RIGHT ) {
-        motor(RIGHT_MOTOR, -40);
-        motor(LEFT_MOTOR, 40);
-    }
-    else {
-        motor(RIGHT_MOTOR, 40);
-        motor(LEFT_MOTOR, -40);
-    }
-    
-    initialTime = (int)seconds();
-    while((initialTime + 1) != elapsedTime) {
-        elapsedTime = (int)seconds();
-    }
-}
-
-void turnRight() 
-{
-    int intialTime = (int)seconds();
-    int elapsedTime;
-    
-    motor(RIGHT_MOTOR, -50);
-    motor(LEFT_MOTOR, 0);
-    while((intialTime + 1) != elapsedTime) {
-        elapsedTime = (int)seconds();
-    }
-    
+    //if(significantDifference) {
+    printf("initiateTurnSequence\n");    
     alloff();
+        
+    /* check last turn and turn the opposite direction */
+    if(lastTurn == LEFT) {
+        turn(RIGHT, average);
+        if( foundTape ) {
+            lastTurn = RIGHT;
+        }
+        
+            /* if after turning the reading is worse, undo the turn */
+        if( analog(6) < currentReading ) {
+            resetPosition(RIGHT, average);
+            lastTurn = LEFT;
+        }            
+    }
+    else {
+        turn(LEFT, average);
+        if( foundTape ) {
+            lastTurn = LEFT;
+        }
+           
+        /* if after turning the reading is worse, undo the turn */
+        if( analog(6) < currentReading ) {
+            resetPosition(LEFT, average);
+            lastTurn = RIGHT;
+        }
+    }   
 }
 
-void turnLeft()
+void resetPosition(int direction, int average)
+{
+    int significantDifference = 1;
+    printf("resetPosition\n");
+    while( significantDifference ) {
+        motor(direction, 80);
+        motor(!direction, -80);
+        significantDifference = checkSensorReading(average);
+    }
+}
+
+void turn(int direction, int average)
 {
     int initialTime = (int)seconds();
     int elapsedTime;
-    
-    motor(RIGHT_MOTOR, 0);
-    motor(LEFT_MOTOR, -50);
-    while((initialTime + 1) != elapsedTime) {
+    int significantDifference = 1;
+    printf("turn\n");
+    while( significantDifference && ((initialTime + 1) >= elapsedTime) ) {
+        motor(direction, -55);
+        motor(!direction, 55);
         elapsedTime = (int)seconds();
+        significantDifference = checkSensorReading(average);
     }
     
-    alloff();
+    if( significantDifference ) {
+        foundTape = 0;
+    }
 }
 
 /* moves the robot */
 void move()
 {
+    printf("move\n");
     motor(LEFT_MOTOR, 50);
     motor(RIGHT_MOTOR, 50);
 }
@@ -140,6 +107,8 @@ void move()
 void main() 
 {   
     int average;
+    int initialTime;
+    int elapsedTime;
     /* Starting prompt for user */
     printf("Put robot on tape. ");
     printf("Press start.\n"); 
@@ -152,7 +121,11 @@ void main()
     
     
     while(1) {
-        move();
-        checkSensorReading(average);
+        //move();
+        if( checkSensorReading(average) ) {
+            initiateTurnSequence(average);
+        } else {
+            move();
+        }
     }
 }
