@@ -13,7 +13,7 @@
 
 int rightMotorSpeed = DEFAULT_SPEED;
 int leftMotorSpeed = DEFAULT_SPEED;
-int lastTurn = 0;
+int lastTurn = LEFT;
 int foundTape = 1;
 
 /**
@@ -26,7 +26,7 @@ int getInitialAverage()
     
     /* conduct 10 readings from the light sensor */
     for( i = 0; i < 10; i++ ) 
-    {
+      {
         average += analog(6);
     }
     
@@ -43,7 +43,7 @@ int getInitialAverage()
 int checkSensorReading(int average)
 {
     int currentReading = analog(6);
-    float luminousThreshold = .30;
+    float luminousThreshold = .20;
     int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreshold));
     return significantDifference;
 }
@@ -56,24 +56,24 @@ int checkSensorReading(int average)
 void initiateTurnSequence(int average)
 {
     int currentReading = analog(6);
-        
+    
     /* turn in the opposite direction of the last turn */
-    if(lastTurn == LEFT) 
-    {
+    if( lastTurn == LEFT ) 
+      {
         turn(RIGHT, average);
-
+        
         /* if the tape  is not found, it must be in the other direction */
         if( !foundTape ) 
-        {
+          {
             resetPosition(RIGHT, average);
         }              
     }
     else {
         turn(LEFT, average);
-
+        
         /* if the tape  is not found, it must be in the other direction */
         if( !foundTape ) 
-        {
+          {
             resetPosition(LEFT, average);
         }
     }   
@@ -86,15 +86,15 @@ void initiateTurnSequence(int average)
 void resetPosition(int direction, int average)
 {
     int significantDifference = 1;
- 
- 	/* have the robot turn in the opposite direction until it finds the black line */
+    
+    /* have the robot turn in the opposite direction until it finds the black line */
     while( significantDifference ) 
-    {
+      {
         motor(direction, 80);
         motor(!direction, 15);
         significantDifference = checkSensorReading(average);
     }
-
+    
     foundTape = 1;
     lastTurn = !lastTurn;
 }
@@ -109,9 +109,9 @@ void turn(int direction, int average)
     int initialTime = (int)seconds();
     int elapsedTime;
     int significantDifference = 1;
-
+    
     while( significantDifference && ((initialTime + 1) >= elapsedTime) ) 
-    {
+      {
         motor(direction, -80);
         motor(!direction, 15);
         elapsedTime = (int)seconds();
@@ -120,7 +120,7 @@ void turn(int direction, int average)
     
     /* if the allotted time is up and it hasn't found the black tape */
     if( significantDifference ) 
-    {
+      {
         foundTape = 0;
     }
 }
@@ -138,6 +138,7 @@ void move()
 void main() 
 {   
     int average;
+    float currentReading;
     
     /* Starting prompt for user */
     printf("Put robot on tape. ");
@@ -151,14 +152,14 @@ void main()
     
     /* runs until the user presses the stop button */
     while( !stop_button() ) 
-    {
-    	/* check to see if the robot is off the black line */
+      {
+        /* check to see if the robot is off the black line */
         if( checkSensorReading(average) ) 
-        {
+          {
             initiateTurnSequence(average);
         } 
         else 
-        {
+          {
             move();
         }
     }
