@@ -1,2 +1,2 @@
 # Drew Rife, Brett Pare, Michael Pulliam
-# Robotics Lab, Group 4, CSC463
+# Robotics Lab, Group 3, CSC463
