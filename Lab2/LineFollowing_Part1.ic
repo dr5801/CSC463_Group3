@@ -1,0 +1,167 @@
+/**
+ * Authors: Drew Rife, Brett Pare, Michael Pulliam
+ * Professor: Dr. Girard
+ * CSC 463
+ * Lab 1: Using light sensor to follow a black line
+ */
+
+#define RIGHT_MOTOR 1
+#define LEFT_MOTOR 0
+#define DEFAULT_SPEED 50
+#define RIGHT 1
+#define LEFT 0
+
+int rightMotorSpeed = DEFAULT_SPEED;
+int leftMotorSpeed = DEFAULT_SPEED;
+int lastTurn = LEFT;
+int foundTape = 1;
+
+/**
+ * returns the initial average of the light input before starting 
+ */
+int getInitialAverage()
+{    
+    int i;
+    int average = 0;
+    
+    /* conduct 10 readings from the light sensor */
+    for( i = 0; i < 10; i++ ) 
+    {
+        average += analog(6);
+    }
+    
+    // return the average of those 10 readings
+    return (average/=10);
+}
+
+/**
+ * gets the currentReading of the light sensor and compares it to the average.
+ * If the diference between the two is greater than
+ * 30% (luminous threshold) of the average then there is a 
+ * significant difference 
+ */
+int checkSensorReading(int average)
+{
+    int currentReading = analog(6);
+    float luminousThreshold = .20;
+    int significantDifference = ((float)(average - currentReading) > ((float)average * luminousThreshold));
+    return significantDifference;
+}
+
+/**
+ * Initiates the turn sequence by checking what the last turn was. 
+ * Based on what the last turn is, it turns in the opposite direction
+ * as the robot failed to find the black line in the previous turn
+ */ 
+void initiateTurnSequence(int average)
+{
+    int currentReading = analog(6);
+    
+    /* turn in the opposite direction of the last turn */
+    if( lastTurn == LEFT ) 
+    {
+        turn(RIGHT, average);
+        
+        /* if the tape  is not found, it must be in the other direction */
+        if( !foundTape ) 
+        {
+            resetPosition(RIGHT, average);
+        }              
+    }
+    else 
+	{
+        turn(LEFT, average);
+        
+        /* if the tape  is not found, it must be in the other direction */
+        if( !foundTape ) 
+        {
+            resetPosition(LEFT, average);
+        }
+    }   
+}
+
+/**
+ * if the tape is not found in one direction
+ * then it must be in the opposite direction
+ */
+void resetPosition(int direction, int average)
+{
+    int significantDifference = 1;
+    
+    /* have the robot turn in the opposite direction until it finds the black line */
+    while( significantDifference ) 
+    {
+        motor(direction, 80);
+        motor(!direction, 15);
+        significantDifference = checkSensorReading(average);
+    }
+    
+    foundTape = 1;
+    lastTurn = !lastTurn;
+}
+
+/*
+ * turn in the specified direction.
+ * turn for 1 second, meanwhile 
+ * constantly evaluate if it finds the black line
+ */
+void turn(int direction, int average)
+{
+    int initialTime = (int)seconds();
+    int elapsedTime;
+    int significantDifference = 1;
+    
+    while( significantDifference && ((initialTime + 1) >= elapsedTime) ) 
+    {
+        motor(direction, -80);
+        motor(!direction, 15);
+        elapsedTime = (int)seconds();
+        significantDifference = checkSensorReading(average);
+    }
+    
+    /* if the allotted time is up and it hasn't found the black tape */
+    if( significantDifference ) 
+    {
+        foundTape = 0;
+    }
+}
+
+/* moves the robot */
+void move()
+{
+    motor(LEFT_MOTOR, 100);
+    motor(RIGHT_MOTOR, 100);
+}
+
+/**
+ * main method to run the robot 
+ */
+void main() 
+{   
+    int average;
+    float currentReading;
+    
+    /* Starting prompt for user */
+    printf("Put robot on tape. ");
+    printf("Press start.\n"); 
+    
+    /* waits for start button to be pressed */
+    while( !start_button() );
+    
+    /* when the start button is pressed, get an initial average from the sensor readings */
+    average = getInitialAverage();    
+    
+    /* runs until the user presses the stop button */
+    while( !stop_button() ) 
+    {
+        /* check to see if the robot is off the black line */
+        if( checkSensorReading(average) ) 
+        {
+            initiateTurnSequence(average);
+        } 
+        else 
+        {
+            move();
+        }
+    }
+}
