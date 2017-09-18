@@ -9,6 +9,8 @@
 #define LEFT_MOTOR 0
 #define RIGHT_SENSOR 15
 #define LEFT_SENSOR 10
+#define LEFT_DIRECTION 0
+#define RIGHT_DIRECTION 1
 
 struct Direction {
     int backward;

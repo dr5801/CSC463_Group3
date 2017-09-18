@@ -1,16 +1,23 @@
 state = 0;
+
+state 0 is forward
+state 1 is right
+state 2 is left
+state 3 is backward // turn 180 and go forward
+
     while(going)
     switch(state)
     {
         case 0:
           go forward
           start keeping track of time
-          if(timeout and not hit wall)
+          if(timeout and not hit wall) //this means we found an opening
           {
             next_state = 0;
             break;
         }else
           {
+		  go backwards for a little
             next_state = 1;
             break;
         }
@@ -25,6 +32,7 @@ state = 0;
             break;
         }else
           {
+		  go backwards for the time spent going forwards
             next_state = 2;
             break;
         }
@@ -38,6 +46,7 @@ state = 0;
             break;
         }else
           {
+		  go backwards for the time spent going forwards
             next_state = 3;
             break;
         }
@@ -50,6 +59,7 @@ state = 0;
             break;
         }else
           {
+		  just go backwards a little
             next_state = 1;
             break;
         }
