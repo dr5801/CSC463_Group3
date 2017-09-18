@@ -7,12 +7,15 @@
 
 #define RIGHT_MOTOR 1
 #define LEFT_MOTOR 0
-#define RIGHT_DIRECTION 1
-#define LEFT_DIRECTION 0
 #define RIGHT_SENSOR 15
 #define LEFT_SENSOR 10
 
-int lastTurn = LEFT_DIRECTION;
+struct Direction {
+    int backward;
+    int forward;
+    int right;
+    int left;
+} direction = {0, 1, 2, 3};
 
 void turn(int direction)
 {
@@ -44,7 +47,7 @@ void moveBackward(float timeToRun)
         motor(LEFT_MOTOR, -30);
         motor(RIGHT_MOTOR, -30);
         timeElapsed = seconds();
-      }
+    }
     
 }
 
@@ -104,5 +107,6 @@ void main()
         turn(LEFT_DIRECTION);
     }
     
+        
     alloff();
 }
