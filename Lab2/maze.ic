@@ -13,11 +13,14 @@
 #define RIGHT_DIRECTION 1
 
 struct Direction {
-    int backward;
     int forward;
     int right;
     int left;
+    int backward;
 } direction = {0, 1, 2, 3};
+
+int hitWall;
+int currentState = direction.forward;
 
 void turn(int direction)
 {
@@ -34,8 +37,30 @@ void turn(int direction)
 /* moves the robot forward */
 void moveForward()
 {
-    motor(LEFT_MOTOR, 20);
-    motor(RIGHT_MOTOR, 20);
+    float secondsToRun = 5.0;
+    float initialTime = seconds();
+    float timeOut = initialTime + secondsToRun;
+    int hitWall = 0;
+    
+    while( (timeOut > seconds()) && !hitWall ) {
+        motor(LEFT_MOTOR, 20);
+        motor(RIGHT_MOTOR, 20);
+        
+        if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) {
+            hitWall = 1;
+        } 
+    }
+    
+    if( hitWall ) {
+        if( digital(LEFT_SENSOR) ) {
+            waitForOtherSensor(RIGHT_SENSOR);
+        }
+        else {
+            waitForOtherSensor(LEFT_SENSOR);
+        }
+        
+        moveBackward(3.0);
+    }    
 }
 
 /* moves the robot forward */
@@ -72,43 +97,32 @@ void waitForOtherSensor(int sensor)
  */
 void main() 
 {   
-    //int average;
-    //float currentReading;
     float initialTime;
     float elapsedTime;
-    
+    int currentState = direction.forward;
     /* waits for start button to be pressed */
     while( !start_button() );
     
     while( !stop_button() ) {
-        moveForward();
-        
-        while( !digital(LEFT_SENSOR) && !digital(RIGHT_SENSOR) );
-        
-        if( digital(LEFT_SENSOR) )
-          waitForOtherSensor(RIGHT_SENSOR);
-        else
-          waitForOtherSensor(LEFT_SENSOR);
-        
-        moveBackward(2.0);
-        
-        turn(LEFT_DIRECTION);
-        
-        moveForward();
-        
-        while( !digital(LEFT_SENSOR) && !digital(RIGHT_SENSOR) );
-        
-        if( digital(LEFT_SENSOR) )
-          waitForOtherSensor(RIGHT_SENSOR);
-        else
-          waitForOtherSensor(LEFT_SENSOR);
-        
-        moveBackward(2.0);
-        
-        turn(LEFT_DIRECTION);
-        turn(LEFT_DIRECTION);
+        switch(currentState)
+        {
+            case direction.forward:
+              moveForward();
+              if( hitWall ) {
+                currentState = direction.right;
+              }
+              break;
+            case direction.right:
+              turn(direction.right);
+              currentState = direction.forward;
+              break;
+            case direction.left:
+              turn(direction.left);
+              currentState = direction.forward;
+              break;
+            case direction.backward:
+              
+            
+        }
     }
-    
-        
-    alloff();
 }
