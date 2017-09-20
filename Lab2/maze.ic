@@ -27,7 +27,7 @@ void turn(int turnDirection)
     float initialTime;
     float elapsedTime;
     initialTime = seconds();
-    while(((initialTime+2.1) > elapsedTime)) {
+    while(((initialTime+2.05) > elapsedTime)) {
         switch(turnDirection)
           {
             case direction.right:
@@ -44,20 +44,23 @@ void turn(int turnDirection)
 }
 
 /* moves the robot forward */
-void moveForward()
+float moveForward()
 {
+    float timeElapsed = 0.0;
     float secondsToRun = 5.0;
     float initialTime = seconds();
     float timeOut = initialTime + secondsToRun;
     
+    hitWall = 0;
     while( (timeOut > seconds()) && !hitWall ) {
-        motor(LEFT_MOTOR, 20);
-        motor(RIGHT_MOTOR, 20);
+        motor(LEFT_MOTOR, 40);
+        motor(RIGHT_MOTOR, 40);
         
         if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) {
             hitWall = 1;
         } 
     }
+    timeElapsed = seconds() - initialTime;
     
     if( hitWall ) {
         if( digital(LEFT_SENSOR) ) {
@@ -68,7 +71,9 @@ void moveForward()
         }
         
         moveBackward(3.0);
-    }    
+    }   
+    
+    return timeElapsed;
 }
 
 /* moves the robot forward */
@@ -79,8 +84,8 @@ void moveBackward(float timeToRun)
     
     initialTime = seconds();
     while(initialTime+timeToRun > timeElapsed) {
-        motor(LEFT_MOTOR, -30);
-        motor(RIGHT_MOTOR, -30);
+        motor(LEFT_MOTOR, -40);
+        motor(RIGHT_MOTOR, -40);
         timeElapsed = seconds();
     }
     
@@ -100,26 +105,6 @@ void waitForOtherSensor(int sensor)
     while( !digital(sensor) );
 }
 
-void decideNextTurn(int lastTurn)
-{
-    switch(lastTurn)
-      {
-        case direction.forward:
-          currentState = direction.right;
-        break;
-        case direction.right:
-          currentState = direction.left;
-        break;
-        case direction.left:
-          currentState = direction.backward;
-        break;
-        case direction.backward:
-          currentState = direction.forward;
-        break;
-    }
-}
-
-
 /**
  * main method to run the robot 
  */
@@ -136,25 +121,33 @@ void main()
           {
             case direction.forward:
               moveForward();
-              if( hitWall ) {
-                  hitWall = 0;
-                  decideNextTurn(lastTurn);
-              }
+              if(hitWall )
+                currentState = direction.right;
               break;
             case direction.right:
-                turn(direction.right);
-              lastTurn = direction.right;
+              turn(direction.right);
+              elapsedTime = moveForward();
+              if(hitWall)
+              {
+                moveBackward(elapsedTime);
+                currentState = direction.left;
+              } else
               currentState = direction.forward;
               break;
             case direction.left:
-              turn(direction.left);
-              lastTurn = direction.left;
+              turn(direction.right);
+              turn(direction.right);
+              elapsedTime = moveForward();
+              if(hitWall)
+              {
+                moveBackward(elapsedTime);
+                currentState = direction.backward;
+              }else
               currentState = direction.forward;
               break;
             case direction.backward:
               turn(direction.left);
-              turn(direction.left);
-              lastTurn = direction.forward;
+              moveForward();
               currentState = direction.forward;
               break;
         }
