@@ -92,6 +92,25 @@ void waitForOtherSensor(int sensor)
     while( !digital(sensor) );
 }
 
+void decideNextTurn(int lastTurn)
+{
+    switch(lastTurn)
+    {
+        case direction.forward:
+          currentState = direction.right;
+          break;
+        case direction.right:
+          currentState = direction.left;
+          break;
+        case direction.left:
+          currentState = direction.backward;
+          break;
+        case direction.backward:
+          currentState = direction.forward;
+          break;
+    }
+}
+
 
 /**
  * main method to run the robot 
@@ -101,6 +120,7 @@ void main()
     float initialTime;
     float elapsedTime;
     int currentState = direction.forward;
+    int lastTurn = 0;
     /* waits for start button to be pressed */
     while( !start_button() );
     
@@ -110,23 +130,26 @@ void main()
             case direction.forward:
               moveForward();
               if( hitWall ) {
-                currentState = direction.right;
+                  moveBackward(3.0);
+                  decideNextTurn(lastTurn);
               }
               break;
             case direction.right:
               turn(direction.right);
-              if( hitWall ) {
-                currentState = direction.left;
-              }
+              lastTurn = direction.right;
+              currentState = direction.forward;
               break;
             case direction.left:
               turn(direction.left);
-            currentState = direction.forward;
-            break;
-            case direction.backward:
+              lastTurn = direction.left;
+              currentState = direction.forward;
               break;
-              
-               
+            case direction.backward:
+              turn(direction.left);
+              turn(direction.left);
+              lastTurn = direction.left;
+              currentState = direction.forward;
+              break;
         }
     }
 }
