@@ -22,14 +22,23 @@ struct Direction {
 int hitWall;
 int currentState = direction.forward;
 
-void turn(int direction)
+void turn(int turnDirection)
 {
     float initialTime;
     float elapsedTime;
     initialTime = seconds();
     while(((initialTime+2.1) > elapsedTime)) {
-        bk(direction);
-        fd(!direction);
+        switch(turnDirection)
+          {
+            case direction.right:
+              bk(RIGHT_MOTOR);
+              fd(LEFT_MOTOR);
+              break;
+            case direction.left:
+              bk(LEFT_MOTOR);
+              fd(RIGHT_MOTOR);
+              break;
+        }
         elapsedTime = seconds();
     }
 }
@@ -40,7 +49,6 @@ void moveForward()
     float secondsToRun = 5.0;
     float initialTime = seconds();
     float timeOut = initialTime + secondsToRun;
-    int hitWall = 0;
     
     while( (timeOut > seconds()) && !hitWall ) {
         motor(LEFT_MOTOR, 20);
@@ -95,19 +103,19 @@ void waitForOtherSensor(int sensor)
 void decideNextTurn(int lastTurn)
 {
     switch(lastTurn)
-    {
+      {
         case direction.forward:
           currentState = direction.right;
-          break;
+        break;
         case direction.right:
           currentState = direction.left;
-          break;
+        break;
         case direction.left:
           currentState = direction.backward;
-          break;
+        break;
         case direction.backward:
           currentState = direction.forward;
-          break;
+        break;
     }
 }
 
@@ -119,8 +127,7 @@ void main()
 {   
     float initialTime;
     float elapsedTime;
-    int currentState = direction.forward;
-    int lastTurn = 0;
+    int lastTurn = direction.forward;
     /* waits for start button to be pressed */
     while( !start_button() );
     
@@ -130,12 +137,12 @@ void main()
             case direction.forward:
               moveForward();
               if( hitWall ) {
-                  moveBackward(3.0);
+                  hitWall = 0;
                   decideNextTurn(lastTurn);
               }
               break;
             case direction.right:
-              turn(direction.right);
+                turn(direction.right);
               lastTurn = direction.right;
               currentState = direction.forward;
               break;
@@ -147,7 +154,7 @@ void main()
             case direction.backward:
               turn(direction.left);
               turn(direction.left);
-              lastTurn = direction.left;
+              lastTurn = direction.forward;
               currentState = direction.forward;
               break;
         }
