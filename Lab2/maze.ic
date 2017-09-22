@@ -10,7 +10,8 @@
 #define RIGHT_SENSOR 15
 #define LEFT_SENSOR 10
 
-struct Direction {
+struct Direction 
+{
     int forward;
     int right;
     int left;
