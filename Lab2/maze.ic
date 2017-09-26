@@ -109,24 +109,24 @@ void main()
           {
             case direction.forward:
               moveForward();
-              if( hitWall ) {
+            if( hitWall ) {
                 currentState = direction.right;
-              }
-              break;
+            }
+            break;
             case direction.right:
               turn(direction.right);
-              if( hitWall ) {
+            if( hitWall ) {
                 currentState = direction.left;
-              }
-              break;
+            }
+            break;
             case direction.left:
               turn(direction.left);
             currentState = direction.forward;
             break;
             case direction.backward:
               break;
-              
-               
+            
+            
         }
     }
 }
