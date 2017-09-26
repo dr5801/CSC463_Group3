@@ -1,7 +1,0 @@
-void main() 
-{
-    float initialTime;
-    initialTime = seconds();
-    bk(1);
-    fd(0);
-}
