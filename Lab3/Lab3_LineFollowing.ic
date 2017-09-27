@@ -1,0 +1,102 @@
+/*
+ * Authors: Drew Rife, Brett Pare, Michael Pulliam
+ * Professor: Dr. Girard
+ * CSC 463
+ * Lab 2: Use two light sensors
+ */
+
+#define LEFT_MOTOR 0
+#define RIGHT_MOTOR 1
+#define LEFT_SENSOR 5
+#define RIGHT_SENSOR 6
+#define DEFAULT_MOTOR_SPEED 50.0
+#define MOTOR_RATIO 50.0
+
+float sensorValues[2];
+float motorSpeeds[2];
+float difference;
+float differencePercentage;
+
+/*
+Wait for the start button to be pressed before running the motor control loop
+*/
+void waitForStart()
+{
+    //wait until the user presses the start button
+    printf("Press the start button.\n");
+    while(!start_button());
+    printf("\n");
+}
+
+/*
+Obtain values from the light sensors and return the values in an array
+*/
+void getSensorValues()
+{
+    sensorValues[0] = (float)analog(LEFT_SENSOR);
+    sensorValues[1] = (float)analog(RIGHT_SENSOR);
+    //printf("l: %f r: %f\n", sensorValues[0], sensorValues[1]);
+}
+
+/*
+Find the difference between the sensor values
+*/
+void calculateDifference()
+{
+    difference = sensorValues[0]-sensorValues[1];
+    differencePercentage = difference / 255.0;
+}
+
+/*
+Calculate the Resulting motor values
+*/
+void calculateMotorSpeeds()
+{
+    if(difference > 0.0) //if the left sensor is reading a higher value than the right
+    {
+        //motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED - ((float)difference * MOTOR_RATIO);
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED - differencePercentage * DEFAULT_MOTOR_SPEED * MOTOR_RATIO;
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
+    }
+    else if(difference < 0.0) //if the opposite is true
+    {
+        //motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED + ((float)difference * MOTOR_RATIO);
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED + differencePercentage * DEFAULT_MOTOR_SPEED * MOTOR_RATIO;
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
+    }
+    else
+    {
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
+    }
+    printf("l: %f r: %f\n", motorSpeeds[0], motorSpeeds[1]);
+}
+
+/*
+Controls the motors
+*/
+void motorControl()
+{
+    getSensorValues();
+    calculateDifference();
+    calculateMotorSpeeds();
+    
+    motor(LEFT_MOTOR,(int)motorSpeeds[0]);
+    motor(RIGHT_MOTOR,(int)motorSpeeds[1]);
+}
+
+/**
+ * main method to run the robot 
+ */
+int main(void) 
+{     
+    waitForStart();
+    
+    while(!stop_button())
+    {
+        motorControl();
+    }
+    
+    alloff();
+    return 0;
+}
