@@ -2,7 +2,7 @@
  * Authors: Drew Rife, Brett Pare, Michael Pulliam
  * Professor: Dr. Girard
  * CSC 463
- * Lab 2: Use two light sensors
+ * Lab 3: Use two light sensors to follow the line, while using fuzzy logic
  */
 
 #define LEFT_MOTOR 0
