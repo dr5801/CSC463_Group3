@@ -9,15 +9,14 @@
 #define RIGHT_MOTOR 1
 #define LEFT_SENSOR 5
 #define RIGHT_SENSOR 6
-#define DEFAULT_MOTOR_SPEED 75.0
-#define MOTOR_RATIO 50.0
+#define DEFAULT_MOTOR_SPEED 60.0
+#define MOTOR_RATIO 40.0
 
 float sensorValues[2];
 float motorSpeeds[2];
 float difference;
 float differencePercentage;
-float fuzzy1;
-float fuzzy2;
+float fuzzy;
 
 /**
  * Wait for the start button to be pressed before running the motor control loop 
@@ -37,7 +36,9 @@ void waitForStart()
 float abs(float input)
 {
     if(input < 0.0)
+    {
       return input * (-1.0);
+    }    
     else
       return input;
 }
@@ -61,65 +62,67 @@ void calculateDifference()
     differencePercentage = abs(difference) / max_sensor_reading;
     
     //Generate a fuzzy value
-    fuzzy1 = 1.0 - (DEFAULT_MOTOR_SPEED - (differencePercentage * DEFAULT_MOTOR_SPEED * MOTOR_RATIO))/(DEFAULT_MOTOR_SPEED);
-    fuzzy2 = (DEFAULT_MOTOR_SPEED - (differencePercentage * DEFAULT_MOTOR_SPEED * MOTOR_RATIO))/(DEFAULT_MOTOR_SPEED) * .75;
+    fuzzy = 1.0 - (abs(difference)/255.0) * MOTOR_RATIO;
 }
-             
- /**
+
+/**
  * Calculate the resulting motor values
  */
-             void calculateMotorSpeeds()
-             {
-                 if(difference < 0.0) 
-                   {
-                     /* if the left sensor is reading a higher value than the right, calculate the speed for the left motor */
-                     motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy1;
-                     motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy2;
-                 }
-                 else if(difference > 0.0) //if the opposite is true
-                   {
-                     /* if the left sensor is reading a lower value than the right, calculate the speed for the right motor */
-                     motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy1;
-                     motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy2;
-                 }
-                 else
-                 {
-                     /* on the black line, keep going straight */
-                     motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
-                     motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
-                 }
-             }
-             
-             /**
+void calculateMotorSpeeds()
+{
+    if(difference < 0.0) 
+      {
+        /* if the left sensor is reading a higher value than the right, calculate the speed for the left motor */
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy;
+    }
+    else if(difference > 0.0) //if the opposite is true
+      {
+        /* if the left sensor is reading a lower value than the right, calculate the speed for the right motor */
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy;
+    }
+    else
+    {
+        /* on the black line, keep going straight */
+        motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
+        motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
+    }
+}
+
+/**
  * Controls the motors by:
  * 1. getting the light sensor values 
  * 2. calculating the difference between the two values
  * 3. calculating the motor speeds based on the difference
  * 4. setting the motor speeds to the newly calculated speeds they should be powered at
  */
-             void motorControl()
-             {
-                 getSensorValues();
-                 calculateDifference();
-                 calculateMotorSpeeds();
-                 
-                 motor(LEFT_MOTOR,(int)motorSpeeds[0]);
-                 motor(RIGHT_MOTOR,(int)motorSpeeds[1]);
-             }
-             
-             /**
+void motorControl()
+{
+    getSensorValues();
+    calculateDifference();
+    calculateMotorSpeeds();
+    
+    motor(LEFT_MOTOR,(int)motorSpeeds[0]);
+    motor(RIGHT_MOTOR,(int)motorSpeeds[1]);
+}
+
+/**
  * main method to run the robot 
  */
-             int main(void) 
-             {     
-                 waitForStart();
-                 
-                 while(!stop_button())
-                   {
-                     motorControl();
-                 }
-                 
-                 alloff();
-                 return 0;
-             }
-             
+int main(void) 
+{     
+    while(1)
+    {
+        waitForStart();
+        
+        while(!stop_button())
+          {
+            motorControl();
+        }
+        
+        alloff();
+    }
+    return 0;
+}
+
