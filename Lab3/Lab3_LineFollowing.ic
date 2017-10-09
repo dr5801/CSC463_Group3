@@ -40,7 +40,9 @@ float abs(float input)
       return input * (-1.0);
     }    
     else
-      return input;
+    {
+        return input;
+    {
 }
 
 /**
@@ -61,7 +63,7 @@ void calculateDifference()
     difference = sensorValues[0]-sensorValues[1];
     differencePercentage = abs(difference) / max_sensor_reading;
     
-    //Generate a fuzzy value
+    /* generate a fuzzy value */
     fuzzy = 1.0 - (abs(difference)/255.0) * MOTOR_RATIO;
 }
 
@@ -71,13 +73,13 @@ void calculateDifference()
 void calculateMotorSpeeds()
 {
     if(difference < 0.0) 
-      {
+    {
         /* if the left sensor is reading a higher value than the right, calculate the speed for the left motor */
         motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED;
         motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy;
     }
-    else if(difference > 0.0) //if the opposite is true
-      {
+    else if(difference > 0.0)
+    {
         /* if the left sensor is reading a lower value than the right, calculate the speed for the right motor */
         motorSpeeds[RIGHT_MOTOR] = DEFAULT_MOTOR_SPEED;
         motorSpeeds[LEFT_MOTOR] = DEFAULT_MOTOR_SPEED * fuzzy;
@@ -117,7 +119,7 @@ int main(void)
         waitForStart();
         
         while(!stop_button())
-          {
+        {
             motorControl();
         }
         
