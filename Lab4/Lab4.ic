@@ -7,9 +7,9 @@
 
 #define RIGHT_MOTOR 2
 #define LEFT_MOTOR 0
-#define LIGHT_SENSOR 7
-#define LEFT_IR 8
-#define RIGHT_IR 9
+#define LIGHT_SENSOR 4
+#define LEFT_IR 5
+#define RIGHT_IR 6
 
 struct Direction 
 {
@@ -202,21 +202,21 @@ void main()
           {
             case direction.forward:
               elapsedTime = moveForward();
-              currentState = evaluate(currentState, elapsedTime);
+            currentState = evaluate(currentState, elapsedTime);
             break;
             case direction.right:
               turn(direction.right);
-              elapsedTime = moveForward();
+            elapsedTime = moveForward();
             break;
             case direction.backward:
               turn(direction.right);
-              turn(direction.right);
-              elapsedTime = moveForward();
+            turn(direction.right);
+            elapsedTime = moveForward();
             break;
             case direction.left:
               turn(direction.left);
-              elapsedTime = moveForward();
-              currentState = evaluate(currentState, elapsedTime);
+            elapsedTime = moveForward();
+            currentState = evaluate(currentState, elapsedTime);
             break;
         }
     }
