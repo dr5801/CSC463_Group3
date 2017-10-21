@@ -28,18 +28,18 @@ int hitWall;
  */
 void turn(int turnDirection)
 {
-    float initialTime;
+	float initialTime;
     float elapsedTime;
     switch(turnDirection)
-      {
+    {
         case direction.right:
-          bk(RIGHT_MOTOR);
-        fd(LEFT_MOTOR);
-        break;
+			bk(RIGHT_MOTOR);
+			fd(LEFT_MOTOR);
+			break;
         case direction.left:
-          bk(LEFT_MOTOR);
-        fd(RIGHT_MOTOR);
-        break;
+			bk(LEFT_MOTOR);
+			fd(RIGHT_MOTOR);
+			break;
     }
     
     initialTime = seconds();
@@ -61,27 +61,27 @@ float moveForwardIR()
     timeOut = initialTime + secondsToRun;
     fd(LEFT_MOTOR);
     fd(RIGHT_MOTOR);
-    while( (timeOut > seconds()) && !hitWall ) 
-      {        
+    while((timeOut > seconds()) && !hitWall) 
+    {        
         if( analog(LEFT_IR) < 50 || analog(RIGHT_IR) < 50 ) 
-          {
-            hitWall = 1;
+        {
+			hitWall = 1;
         } 
     }
     timeElapsed = seconds() - initialTime;
     
     /* if the robot found the wall */
-    if( hitWall ) 
-      {
+    if(hitWall) 
+    {
         /* if the left sensor found the wall, wait for the right sensor to read the same value as the left sensor */
-        if( analog(LEFT_IR) < 50 ) 
-          {
-            waitForOtherSensor(RIGHT_IR);
+		if( analog(LEFT_IR) < 50 ) 
+        {
+			waitForOtherSensor(RIGHT_IR);
         }
         /* else the right sensor found the wall, wait for the left sensor to read the same value as the right sensor */
         else 
-          {
-            waitForOtherSensor(LEFT_IR);
+        {
+			waitForOtherSensor(LEFT_IR);
         }
     }   
     
@@ -111,14 +111,14 @@ void waitForOtherSensor(int sensor)
 {
     int currentReading;
     int range = 5;
-    if( sensor == RIGHT_IR ) 
+    if(sensor == RIGHT_IR) 
     {
         bk(LEFT_MOTOR);
         fd(RIGHT_MOTOR);
         while( analog(RIGHT_IR) >= (analog(LEFT_IR)+range) );
     }
     else 
-      {
+    {
         bk(RIGHT_MOTOR);
         fd(LEFT_MOTOR);
         while( analog(LEFT_IR) >= (analog(RIGHT_IR)+range) );
@@ -136,25 +136,25 @@ int evaluate(int currentState, float elapsedTime)
      * if a wall was found, move backward to original position.
      * Then select next state to transition to
      */
-    if( hitWall )
-      {
+    if(hitWall)
+    {
         moveBackward(elapsedTime);
         
         /* select next state to transition to */
         switch(currentState)
-          {
+        {
             case direction.forward:
-              nextState = direction.right;
-              break;
+				nextState = direction.right;
+				break;
             case direction.right:
-              nextState = direction.backward;
-              break;
+				nextState = direction.backward;
+				break;
             case direction.backward:
-              nextState = direction.left;
-              break;
+				nextState = direction.left;
+				break;
             case direction.left:
-              nextState = direction.forward;
-              break;
+				nextState = direction.forward;
+				break;
         }    
     }
     else 
@@ -171,10 +171,12 @@ int evaluate(int currentState, float elapsedTime)
  */
 int foundLight()
 {
-    if(analog(LIGHT_SENSOR) > 150) {
+    if(analog(LIGHT_SENSOR) > 150) 
+	{
         return 0;
     }
-    else {
+    else 
+	{
         return 1;
     }
 }
@@ -191,33 +193,37 @@ void useIR()
     int lightFound = 0;
     
     /* while the light source isn't found */
-    while(!lightFound){
+    while(!lightFound)
+	{
         switch(currentState)
-          {
+        {
             case direction.forward:
-              elapsedTime = moveForwardIR();
-              break;
+				elapsedTime = moveForwardIR();
+				break;
             case direction.right:
-              turn(direction.right);
-              break;
+				turn(direction.right);
+				break;
             case direction.backward:
-              turn(direction.right);
-              turn(direction.right);
-              break;
+				turn(direction.right);
+				turn(direction.right);
+				break;
             case direction.left:
-              turn(direction.left);
-              break;
+				turn(direction.left);
+				break;
         }
         
         /* after the state does it's method, check for the light source */
-        if(!foundLight()) {
-            if(currentState != direction.forward) {
+        if(!foundLight()) 
+		{
+            if(currentState != direction.forward) 
+			{
                 elapsedTime = moveForwardIR();
             }
             
             currentState = evaluate(currentState, elapsedTime);
         }
-        else {
+        else 
+		{
             lightFound = 1;
         }
     }   
@@ -240,7 +246,7 @@ void useLightSensor()
 int main() 
 {       
     /* waits for start button to be pressed */
-    while( !start_button() );
+    while(!start_button());
     
     /* use the IR sensors first until the light source is found */
     useIR();
