@@ -31,15 +31,15 @@ void turn(int turnDirection)
     float initialTime;
     float elapsedTime;
     switch(turnDirection)
-    {
+      {
         case direction.right:
-            bk(RIGHT_MOTOR);
-            fd(LEFT_MOTOR);
-            break;
+          bk(RIGHT_MOTOR);
+        fd(LEFT_MOTOR);
+        break;
         case direction.left:
-            bk(LEFT_MOTOR);
-            fd(RIGHT_MOTOR);
-            break;
+          bk(LEFT_MOTOR);
+        fd(RIGHT_MOTOR);
+        break;
     }
     
     initialTime = seconds();
@@ -55,7 +55,7 @@ float moveForwardIR()
     float timeOut;
     float timeElapsed = 0.0;
     float secondsToRun = 7.0;
-        
+    
     hitWall = 0;
     initialTime = seconds();
     timeOut = initialTime + secondsToRun;
@@ -64,7 +64,7 @@ float moveForwardIR()
     //motor(LEFT_MOTOR, 100);
     //motor(RIGHT_MOTOR, 100);
     while( (timeOut > seconds()) && !hitWall ) 
-    {        
+      {        
         if( analog(LEFT_IR) < 50 || analog(RIGHT_IR) < 50 ) 
           {
             hitWall = 1;
@@ -127,7 +127,7 @@ void waitForOtherSensor(int sensor)
         while( analog(RIGHT_IR) >= (analog(LEFT_IR)+range) );
     }
     else 
-    {
+      {
         //off(RIGHT_MOTOR);
         //currentReading = analog(RIGHT_IR);
         //motor(RIGHT_MOTOR, -50);
@@ -161,16 +161,16 @@ int evaluate(int currentState, float elapsedTime)
           {
             case direction.forward:
               nextState = direction.right;
-              break;
+            break;
             case direction.right:
               nextState = direction.backward;
-              break;
+            break;
             case direction.backward:
               nextState = direction.left;
-              break;
+            break;
             case direction.left:
               nextState = direction.forward;
-              break;
+            break;
         }    
     }
     else 
@@ -185,7 +185,7 @@ int evaluate(int currentState, float elapsedTime)
 int foundLight()
 {
     if(analog(LIGHT_SENSOR) > 150) {
-           return 0;
+        return 0;
     }
     else {
         return 1;
@@ -197,52 +197,36 @@ void useIR()
     float initialTime;
     float elapsedTime;
     int currentState = direction.forward;
-    int lastTurn = direction.forward;
+    int lastState = direction.forward;
     int lightFound = 0;
     
     while(!lightFound){
         switch(currentState)
-        {
+          {
             case direction.forward:
               elapsedTime = moveForwardIR();
-              if(!foundLight()) {
-                currentState = evaluate(currentState, elapsedTime);
-              }
-              else {
-                lightFound = 1;
-              }
               break;
             case direction.right:
               turn(direction.right);
-              if(!foundLight()) {
-                elapsedTime = moveForwardIR();
-                currentState = evaluate(currentState, elapsedTime);
-              }
-              else {
-                lightFound = 1;
-              }
               break;
             case direction.backward:
               turn(direction.right);
               turn(direction.right);
-              if(!foundLight()) {
-                elapsedTime = moveForwardIR();
-                currentState = evaluate(currentState, elapsedTime);
-              }
-              else {
-                lightFound = 1;
-              }
               break;
             case direction.left:
               turn(direction.left);
-              if(!foundLight()) {
-                elapsedTime = moveForwardIR();
-                currentState = evaluate(currentState, elapsedTime);
-              }
-              else {
-                lightFound = 1;
-              }
               break;
+        }
+        
+        if(!foundLight()) {
+            if(currentState != direction.forward) {
+                elapsedTime = moveForwardIR();
+            }
+            
+            currentState = evaluate(currentState, elapsedTime);
+        }
+        else {
+            lightFound = 1;
         }
     }   
 }
