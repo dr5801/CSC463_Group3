@@ -30,41 +30,41 @@ void turn(int turnDirection)
 {
     float initialTime;
     float elapsedTime;
-    initialTime = seconds();
-    while(((initialTime+2.15) > elapsedTime)) 
-      {
-        switch(turnDirection)
-          {
-            case direction.right:
-              bk(RIGHT_MOTOR);
+    switch(turnDirection)
+    {
+        case direction.right:
+            bk(RIGHT_MOTOR);
             fd(LEFT_MOTOR);
             break;
-            case direction.left:
-              bk(LEFT_MOTOR);
+        case direction.left:
+            bk(LEFT_MOTOR);
             fd(RIGHT_MOTOR);
             break;
-        }
-        elapsedTime = seconds();
     }
+    
+    initialTime = seconds();
+    while(((initialTime+2.25) > seconds()));
 }
 
 /**
  * Moves the robot forward for 5 seconds or until it hits a wall.
  */
-float moveForward()
+float moveForwardIR()
 {
+    float initialTime;
+    float timeOut;
     float timeElapsed = 0.0;
-    float secondsToRun = 5.0;
-    float initialTime = seconds();
-    float timeOut = initialTime + secondsToRun;
-    
-    
-    hitWall = 0;
-    while( (timeOut > seconds()) && !hitWall ) 
-      {
-        motor(LEFT_MOTOR, 60);
-        motor(RIGHT_MOTOR, 60);
+    float secondsToRun = 7.0;
         
+    hitWall = 0;
+    initialTime = seconds();
+    timeOut = initialTime + secondsToRun;
+    fd(LEFT_MOTOR);
+    fd(RIGHT_MOTOR);
+    //motor(LEFT_MOTOR, 100);
+    //motor(RIGHT_MOTOR, 100);
+    while( (timeOut > seconds()) && !hitWall ) 
+    {        
         if( analog(LEFT_IR) < 50 || analog(RIGHT_IR) < 50 ) 
           {
             hitWall = 1;
@@ -99,12 +99,11 @@ void moveBackward(float timeToRun)
     float timeElapsed;
     
     initialTime = seconds();
-    while(initialTime+timeToRun > timeElapsed) 
-      {
-        motor(LEFT_MOTOR, -60);
-        motor(RIGHT_MOTOR, -60);
-        timeElapsed = seconds();
-    }    
+    bk(LEFT_MOTOR);
+    bk(RIGHT_MOTOR);
+    //motor(LEFT_MOTOR, -100);
+    //motor(RIGHT_MOTOR, -100);
+    while(initialTime+timeToRun > seconds());    
 }
 
 /**
@@ -114,19 +113,32 @@ void moveBackward(float timeToRun)
  */
 void waitForOtherSensor(int sensor) 
 {
+    int currentReading;
+    int range = 5;
     if( sensor == RIGHT_IR ) 
       {
-        off(LEFT_MOTOR);
-        motor(RIGHT_MOTOR, 50);
+        //off(LEFT_MOTOR);
+        //currentReading = analog(LEFT_IR);
+        //motor(LEFT_MOTOR, -50);
+        //motor(RIGHT_MOTOR, 50);
+        //motor(RIGHT_MOTOR, 50);
+        bk(LEFT_MOTOR);
+        fd(RIGHT_MOTOR);
+        while( analog(RIGHT_IR) >= (analog(LEFT_IR)+range) );
     }
     else 
-      {
-        off(RIGHT_MOTOR);
-        motor(LEFT_MOTOR, 50);
+    {
+        //off(RIGHT_MOTOR);
+        //currentReading = analog(RIGHT_IR);
+        //motor(RIGHT_MOTOR, -50);
+        //motor(LEFT_MOTOR, 50);
+        //motor(LEFT_MOTOR, 50);
+        bk(RIGHT_MOTOR);
+        fd(LEFT_MOTOR);
+        while( analog(LEFT_IR) >= (analog(RIGHT_IR)+range) );
     }
     
-    /* wait until the sensor touches the wall */
-    while( (analog(sensor) > 50) );
+    //alloff();
 }
 
 /**
@@ -149,16 +161,16 @@ int evaluate(int currentState, float elapsedTime)
           {
             case direction.forward:
               nextState = direction.right;
-            break;
+              break;
             case direction.right:
               nextState = direction.backward;
-            break;
+              break;
             case direction.backward:
               nextState = direction.left;
-            break;
+              break;
             case direction.left:
               nextState = direction.forward;
-            break;
+              break;
         }    
     }
     else 
@@ -170,46 +182,88 @@ int evaluate(int currentState, float elapsedTime)
     return nextState; 
 }
 
-/**
- * main method to run the robot 
- */
-void main() 
-{   
+int foundLight()
+{
+    if(analog(LIGHT_SENSOR) > 150) {
+           return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
+void useIR()
+{
     float initialTime;
     float elapsedTime;
     int currentState = direction.forward;
     int lastTurn = direction.forward;
+    int lightFound = 0;
     
+    while(!lightFound){
+        switch(currentState)
+        {
+            case direction.forward:
+              elapsedTime = moveForwardIR();
+              if(!foundLight()) {
+                currentState = evaluate(currentState, elapsedTime);
+              }
+              else {
+                lightFound = 1;
+              }
+              break;
+            case direction.right:
+              turn(direction.right);
+              if(!foundLight()) {
+                elapsedTime = moveForwardIR();
+                currentState = evaluate(currentState, elapsedTime);
+              }
+              else {
+                lightFound = 1;
+              }
+              break;
+            case direction.backward:
+              turn(direction.right);
+              turn(direction.right);
+              if(!foundLight()) {
+                elapsedTime = moveForwardIR();
+                currentState = evaluate(currentState, elapsedTime);
+              }
+              else {
+                lightFound = 1;
+              }
+              break;
+            case direction.left:
+              turn(direction.left);
+              if(!foundLight()) {
+                elapsedTime = moveForwardIR();
+                currentState = evaluate(currentState, elapsedTime);
+              }
+              else {
+                lightFound = 1;
+              }
+              break;
+        }
+    }   
+}
+
+void useLightSensor()
+{
+    fd(LEFT_MOTOR);
+    fd(RIGHT_MOTOR);
+    while(analog(LIGHT_SENSOR) < 200);   
+}
+
+/**
+ * main method to run the robot 
+ */
+int main() 
+{       
     /* waits for start button to be pressed */
     while( !start_button() );
     
-    while( !stop_button() && analog(LIGHT_SENSOR) > 200) 
-      {
-        switch(currentState)
-          {
-            case direction.forward:
-              elapsedTime = moveForward();
-            currentState = evaluate(currentState, elapsedTime);
-            break;
-            case direction.right:
-              turn(direction.right);
-            elapsedTime = moveForward();
-            currentState = evaluate(currentState, elapsedTime);
-            break;
-            case direction.backward:
-              turn(direction.right);
-            turn(direction.right);
-            elapsedTime = moveForward();
-            currentState = evaluate(currentState, elapsedTime);
-            break;
-            case direction.left:
-              turn(direction.left);
-            elapsedTime = moveForward();
-            currentState = evaluate(currentState, elapsedTime);
-            break;
-        }
-    }
-    
-    currentState = direction.forward;
-    moveForward();
+    useIR();
+    useLightSensor();
+    alloff();
+    return 0;
 }
