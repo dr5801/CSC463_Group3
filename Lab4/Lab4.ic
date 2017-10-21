@@ -2,7 +2,7 @@
  * Authors: Drew Rife, Brett Pare, Michael Pulliam
  * Professor: Dr. Girard
  * CSC 463
- * Lab 2: Use touch sensors to walk robot out of the maze
+ * Lab 4: Use IR sensors and light sensors to navigate through the maze
  */
 
 #define RIGHT_MOTOR 2
@@ -47,7 +47,7 @@ void turn(int turnDirection)
 }
 
 /**
- * Moves the robot forward for 5 seconds or until it hits a wall.
+ * Moves the robot forward for 6 seconds or until it finds a wall.
  */
 float moveForwardIR()
 {
@@ -61,8 +61,6 @@ float moveForwardIR()
     timeOut = initialTime + secondsToRun;
     fd(LEFT_MOTOR);
     fd(RIGHT_MOTOR);
-    //motor(LEFT_MOTOR, 100);
-    //motor(RIGHT_MOTOR, 100);
     while( (timeOut > seconds()) && !hitWall ) 
       {        
         if( analog(LEFT_IR) < 50 || analog(RIGHT_IR) < 50 ) 
@@ -72,15 +70,15 @@ float moveForwardIR()
     }
     timeElapsed = seconds() - initialTime;
     
-    /* if the robot hit the wall */
+    /* if the robot found the wall */
     if( hitWall ) 
       {
-        /* if the left sensor was touched, wait for the right sensor to touch */
+        /* if the left sensor found the wall, wait for the right sensor to read the same value as the left sensor */
         if( analog(LEFT_IR) < 50 ) 
           {
             waitForOtherSensor(RIGHT_IR);
         }
-        /* else the right sensor was touched, wait for the left sensor to touch */
+        /* else the right sensor found the wall, wait for the left sensor to read the same value as the right sensor */
         else 
           {
             waitForOtherSensor(LEFT_IR);
@@ -101,57 +99,43 @@ void moveBackward(float timeToRun)
     initialTime = seconds();
     bk(LEFT_MOTOR);
     bk(RIGHT_MOTOR);
-    //motor(LEFT_MOTOR, -100);
-    //motor(RIGHT_MOTOR, -100);
     while(initialTime+timeToRun > seconds());    
 }
 
 /**
- * When one sensor is touched, turn off that sensor and continue to
- * power the other sensor until it touches the wall as well. 
- * This gets the robot directly squared.
+ * When one sensor finds a wall, reverse that sensor's respective motor and 
+ * power the other sensor's respective motor until the sensor is reading the  
+ * same value as the other sensor (squaring the robot with the wall it just found).
  */
 void waitForOtherSensor(int sensor) 
 {
     int currentReading;
     int range = 5;
     if( sensor == RIGHT_IR ) 
-      {
-        //off(LEFT_MOTOR);
-        //currentReading = analog(LEFT_IR);
-        //motor(LEFT_MOTOR, -50);
-        //motor(RIGHT_MOTOR, 50);
-        //motor(RIGHT_MOTOR, 50);
+    {
         bk(LEFT_MOTOR);
         fd(RIGHT_MOTOR);
         while( analog(RIGHT_IR) >= (analog(LEFT_IR)+range) );
     }
     else 
       {
-        //off(RIGHT_MOTOR);
-        //currentReading = analog(RIGHT_IR);
-        //motor(RIGHT_MOTOR, -50);
-        //motor(LEFT_MOTOR, 50);
-        //motor(LEFT_MOTOR, 50);
         bk(RIGHT_MOTOR);
         fd(LEFT_MOTOR);
         while( analog(LEFT_IR) >= (analog(RIGHT_IR)+range) );
     }
-    
-    //alloff();
 }
 
 /**
- * evaluates the current state, whether it hit a wall, and sets the next state
+ * evaluates the current state, whether it found a wall, and sets the next state.
  */
 int evaluate(int currentState, float elapsedTime)
 {
     int nextState;
     
     /**
-  * if a wall was hit, move backward to original position.
-  * Then select next state to transition to
-  */
+     * if a wall was found, move backward to original position.
+     * Then select next state to transition to
+     */
     if( hitWall )
       {
         moveBackward(elapsedTime);
@@ -161,27 +145,30 @@ int evaluate(int currentState, float elapsedTime)
           {
             case direction.forward:
               nextState = direction.right;
-            break;
+              break;
             case direction.right:
               nextState = direction.backward;
-            break;
+              break;
             case direction.backward:
               nextState = direction.left;
-            break;
+              break;
             case direction.left:
               nextState = direction.forward;
-            break;
+              break;
         }    
     }
     else 
-      {
-        /* a wall wasn't hit so keep moving forward */
+    {
+        /* a wall wasn't found so keep moving forward */
         nextState = direction.forward;
     }
     
     return nextState; 
 }
 
+/** 
+ * Checks to see if it finds the light source. 
+ */
 int foundLight()
 {
     if(analog(LIGHT_SENSOR) > 150) {
@@ -192,14 +179,18 @@ int foundLight()
     }
 }
 
+/**
+ * Use the IR sensors to navigate through the maze
+ * until the light source is found. 
+ */
 void useIR()
 {
     float initialTime;
     float elapsedTime;
     int currentState = direction.forward;
-    int lastState = direction.forward;
     int lightFound = 0;
     
+    /* while the light source isn't found */
     while(!lightFound){
         switch(currentState)
           {
@@ -218,6 +209,7 @@ void useIR()
               break;
         }
         
+        /* after the state does it's method, check for the light source */
         if(!foundLight()) {
             if(currentState != direction.forward) {
                 elapsedTime = moveForwardIR();
@@ -231,6 +223,10 @@ void useIR()
     }   
 }
 
+/**
+ * the light source has been found.
+ * move forward towards the light source
+ */
 void useLightSensor()
 {
     fd(LEFT_MOTOR);
@@ -246,6 +242,7 @@ int main()
     /* waits for start button to be pressed */
     while( !start_button() );
     
+    /* use the IR sensors first until the light source is found */
     useIR();
     useLightSensor();
     alloff();
