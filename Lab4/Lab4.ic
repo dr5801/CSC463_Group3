@@ -54,7 +54,7 @@ float moveForwardIR()
     float initialTime;
     float timeOut;
     float timeElapsed = 0.0;
-    float secondsToRun = 7.0;
+    float secondsToRun = 6.0;
     
     hitWall = 0;
     initialTime = seconds();
