@@ -5,10 +5,10 @@
  * Lab 2: Use touch sensors to walk robot out of the maze
  */
 
-#define RIGHT_MOTOR 1
+#define RIGHT_MOTOR 2
 #define LEFT_MOTOR 0
-#define RIGHT_SENSOR 15
-#define LEFT_SENSOR 10
+#define RIGHT_SENSOR 8
+#define LEFT_SENSOR 7
 
 struct Direction 
 {
@@ -20,6 +20,11 @@ struct Direction
 
 /* flag for if the robot hit the wall */
 int hitWall;
+int currentAction = direction.forward;
+int consecutiveTurns;
+
+float rewardValues[4];
+
 
 /**
  * Turns the robot in the specific direction.
@@ -127,45 +132,62 @@ void waitForOtherSensor(int sensor)
     while( !digital(sensor) );
 }
 
+int getNextAction()
+{
+    int i;
+    int j;
+    int highest;
+    float highestValue = 0.0;
+    int tiedHighestValues = 0;
+    int index[4];
+    for(i = 0; i < 4; i++)
+    {
+        if(rewardValues[i] > highestValue) {
+            highestValue = rewardValues[i];
+            highest = i;
+        }
+        else if(rewardValues[i] == highestValue) {
+            tiedHighestValues++;
+        }
+    }
+    
+    if(tiedHighestValues > 0) {
+        j = 0;
+        for(i = 0; i < 4; i++) {
+            if(rewardValues[i] == highestValue) {
+                index[j] = i;
+                j++;
+            }
+        }
+        
+        currentAction = ((int)seconds() % (tiedHighestValues-1));
+        return currentAction;
+        
+    } else {
+      currentAction = highest;
+      return highest; 
+    }
+}
+
 /**
  * evaluates the current state, whether it hit a wall, and sets the next state
  */
-int evaluate(int currentState, int elapsedTime)
+int evaluate(int previousAction, float elapsedTime)
 {
- int nextState;
+    int nextState;
+    int nextAction;
  
  /**
   * if a wall was hit, move backward to original position.
   * Then select next state to transition to
   */
- if( hitWall )
- {
-  moveBackward(elapsedTime);
-  
-  /* select next state to transition to */
-  switch(currentState)
-  {
-   case direction.forward:
-    nextState = direction.right;
-    break;
-   case direction.right:
-    nextState = direction.backward;
-    break;
-   case direction.backward:
-    nextState = direction.left;
-    break;
-   case direction.left:
-    nextState = direction.forward;
-    break;
-  }    
- }
- else 
- {
-  /* a wall wasn't hit so keep moving forward */
-  nextState = direction.forward;
- }
- 
- return nextState; 
+    if( hitWall ) {
+        rewardValues[previousAction] -= 0.5;
+    }
+    else {
+        rewardValues[previousAction] += 1.0;
+    }
+    return getNextAction();
 }
 
 /**
@@ -175,7 +197,6 @@ void main()
 {   
     float initialTime;
     float elapsedTime;
- int currentState = direction.forward;
     int lastTurn = direction.forward;
  
     /* waits for start button to be pressed */
@@ -183,25 +204,31 @@ void main()
     
     while( !stop_button() ) 
  {
-        switch(currentState)
+        switch(currentAction)
         {
             case direction.forward:
               elapsedTime = moveForward();
-              currentState = evaluate(currentState, elapsedTime);
+              rewardValues[direction.forward] += 0.1;
+              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.right:
               turn(direction.right);
+              rewardValues[direction.right] += 0.1;
               elapsedTime = moveForward();
+              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.backward:
               turn(direction.right);
               turn(direction.right);
+              rewardValues[direction.backward] += 0.1;
               elapsedTime = moveForward();
+              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.left:
               turn(direction.left);
+              rewardValues[direction.left] += 0.1;
               elapsedTime = moveForward();
-              currentState = evaluate(currentState, elapsedTime);
+              currentAction = evaluate(currentAction, elapsedTime);
               break;
         }
     }
