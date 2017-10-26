@@ -9,6 +9,7 @@
 #define LEFT_MOTOR 0
 #define RIGHT_SENSOR 8
 #define LEFT_SENSOR 7
+#define NUM_ACTIONS 4
 
 struct Direction 
 {
@@ -20,10 +21,10 @@ struct Direction
 
 /* flag for if the robot hit the wall */
 int hitWall;
-int currentAction = direction.forward;
 int consecutiveTurns;
 
-float rewardValues[4];
+/* reward values for the actions (Forward, Right, Left, Backwards) */
+float rewardValues[NUM_ACTIONS];
 
 
 /**
@@ -35,21 +36,19 @@ void turn(int turnDirection)
     float initialTime;
     float elapsedTime;
     initialTime = seconds();
-    while(((initialTime+2.05) > elapsedTime)) 
- {
-        switch(turnDirection)
-        {
-            case direction.right:
-              bk(RIGHT_MOTOR);
-              fd(LEFT_MOTOR);
-              break;
-            case direction.left:
-              bk(LEFT_MOTOR);
-              fd(RIGHT_MOTOR);
-              break;
-        }
-        elapsedTime = seconds();
+
+    switch(turnDirection)
+    {
+    	case direction.right:
+    		bk(RIGHT_MOTOR);
+    		fd(LEFT_MOTOR);
+    		break;
+    	case direction.left:
+    		bk(LEFT_MOTOR);
+    		fd(RIGHT_MOTOR);
+    		break;
     }
+    while(((initialTime+2.05) > seconds()));
 }
 
 /**
@@ -59,33 +58,34 @@ float moveForward()
 {
     float timeElapsed = 0.0;
     float secondsToRun = 5.0;
-    float initialTime = seconds();
-    float timeOut = initialTime + secondsToRun;
+    float initialTime = 0.0;
+    float timeOut = 0.0;
     
     hitWall = 0;
-    while( (timeOut > seconds()) && !hitWall ) 
- {
-        motor(LEFT_MOTOR, 40);
-        motor(RIGHT_MOTOR, 40);
-        
+    initialTime = seconds();
+    timeout = initialTime + secondsToRun;
+    motor(LEFT_MOTOR, 40);
+    motor(RIGHT_MOTOR, 40);
+    while( !hitWall && (timeOut > seconds()) ) 
+ 	{        
         if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
-  {
+  		{
             hitWall = 1;
         } 
     }
     timeElapsed = seconds() - initialTime;
     
- /* if the robot hit the wall */
+ 	/* if the robot hit the wall */
     if( hitWall ) 
- {
-  /* if the left sensor was touched, wait for the right sensor to touch */
+ 	{
+ 		 /* if the left sensor was touched, wait for the right sensor to touch */
         if( digital(LEFT_SENSOR) ) 
-  {
+  		{
             waitForOtherSensor(RIGHT_SENSOR);
         }
-  /* else the right sensor was touched, wait for the left sensor to touch */
+  		/* else the right sensor was touched, wait for the left sensor to touch */
         else 
-  {
+  		{
             waitForOtherSensor(LEFT_SENSOR);
         }
     }   
@@ -102,12 +102,11 @@ void moveBackward(float timeToRun)
     float timeElapsed;
     
     initialTime = seconds();
-    while(initialTime+timeToRun > timeElapsed) 
- {
-        motor(LEFT_MOTOR, -40);
-        motor(RIGHT_MOTOR, -40);
-        timeElapsed = seconds();
-    }    
+    motor(LEFT_MOTOR, -40);
+    motor(RIGHT_MOTOR, -40);
+
+    /* wait for robot to back up to original position before it hit the wall */
+    while(initialTime+timeToRun > seconds());    
 }
 
 /**
@@ -117,56 +116,117 @@ void moveBackward(float timeToRun)
  */
 void waitForOtherSensor(int sensor) 
 {
-    if( sensor == RIGHT_SENSOR ) 
- {
-        off(LEFT_MOTOR);
-        motor(RIGHT_MOTOR, 50);
-    }
-    else 
- {
-        off(RIGHT_MOTOR);
-        motor(LEFT_MOTOR, 50);
-    }
+	switch(sensor)
+	{
+		case RIGHT_SENSOR:
+			off(LEFT_MOTOR);
+			motor(RIGHT_MOTOR, 80);
+			break;
+		case LEFT_SENSOR:
+			off(RIGHT_MOTOR);
+			motor(RIGHT_MOTOR, 80);
+			break;
+	}
     
- /* wait until the sensor touches the wall */
+    /* wait until the sensor touches the wall */
     while( !digital(sensor) );
 }
 
+/**
+ * gets the highest value from the list of four actions
+ */
+float getHighestValue()
+{
+	int i;
+	int j;
+	float highestValue = 0.0;
+
+	for(i = 0; i < NUM_ACTIONS; i++)
+	{
+		if(rewardValues[i] > highestValue)
+		{
+			highestValue = rewardValues[i];
+		}
+	}
+
+	return highestValue;
+}
+
+/**
+ * returns the number of actions that have the highest value 
+ */
+int getNumberOfActionsWithHighestValue(float highestValue)
+{
+	int i = 0;
+	actionsWithHighestValue = 0;
+	for(i = 0; i < NUM_ACTIONS; i++)
+	{
+		if(rewardValues[i] == highestValue)
+		{
+			actionsWithHighestValue++;
+		}
+	}
+
+	return actionsWithHighestValue;
+}
+
+/**
+ * returns the single action that has the highest value 
+ */
+int getActionWithHighestValue(float highestValue)
+{
+	int i = 0;
+	while(rewardValues[i] != highestValue)
+	{
+		i++;
+	}
+
+	return i;
+}
+
+/**
+ * returns a randomly selected action from a list of actions that all share the highest value
+ */
+int getRandomActionWithHighestValue(float highestValue, int actionsWithHighestValue)
+{
+	int i;
+	int randomAction;
+	int highestValueIndexes[NUM_ACTIONS];
+	int j = 0;
+	for(i = 0; i < NUM_ACTIONS; i++)
+	{
+		if(rewardValues[i] == highestValue)
+		{
+			highestValueIndexes[j] = i;
+			j++;
+		}
+	}
+
+	randomAction = ((int)seconds() % (actionsWithHighestValue-1));
+	return randomAction;
+}
+
+/**
+ * gets the next action by:
+ * 1) getting the highest value
+ * 2) getting the number of actions that have the highest value
+ * 3) if there is only one action with the highest value then return that action.  
+ *    else choose a random action out of the ones with the highest value 
+ */
 int getNextAction()
 {
-    int i;
-    int j;
-    int highest;
-    float highestValue = 0.0;
-    int tiedHighestValues = 0;
-    int index[4];
-    for(i = 0; i < 4; i++)
-    {
-        if(rewardValues[i] > highestValue) {
-            highestValue = rewardValues[i];
-            highest = i;
-        }
-        else if(rewardValues[i] == highestValue) {
-            tiedHighestValues++;
-        }
-    }
-    
-    if(tiedHighestValues > 0) {
-        j = 0;
-        for(i = 0; i < 4; i++) {
-            if(rewardValues[i] == highestValue) {
-                index[j] = i;
-                j++;
-            }
-        }
-        
-        currentAction = ((int)seconds() % (tiedHighestValues-1));
-        return currentAction;
-        
-    } else {
-      currentAction = highest;
-      return highest; 
-    }
+    float highestValue = getHighestValue();
+ 	int actionsWithHighestValue = getNumberOfActionsWithHighestValue(highestValue);  
+
+ 	/* check to see how many actions have the highest value */
+ 	if(actionsWithHighestValue == 1)
+ 	{
+ 		return getActionWithHighestValue(highestValue);
+ 	} 
+ 	else
+ 	{
+ 		return getRandomActionWithHighestValue(highestValue, actionsWithHighestValue);
+ 	}
 }
 
 /**
@@ -177,14 +237,16 @@ int evaluate(int previousAction, float elapsedTime)
     int nextState;
     int nextAction;
  
- /**
-  * if a wall was hit, move backward to original position.
-  * Then select next state to transition to
-  */
-    if( hitWall ) {
+ 	/**
+  	 * if a wall was hit, move backward to original position.
+  	 * Then select next action to transition to
+  	 */
+    if( hitWall ) 
+    {
         rewardValues[previousAction] -= 0.5;
     }
-    else {
+    else 
+    {
         rewardValues[previousAction] += 1.0;
     }
     return getNextAction();
@@ -195,41 +257,43 @@ int evaluate(int previousAction, float elapsedTime)
  */
 void main() 
 {   
-    float initialTime;
     float elapsedTime;
+    int currentAction = direction.forward;
     int lastTurn = direction.forward;
  
     /* waits for start button to be pressed */
     while( !start_button() );
     
     while( !stop_button() ) 
- {
+ 	{
         switch(currentAction)
         {
             case direction.forward:
               elapsedTime = moveForward();
               rewardValues[direction.forward] += 0.1;
-              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.right:
               turn(direction.right);
               rewardValues[direction.right] += 0.1;
-              elapsedTime = moveForward();
-              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.backward:
               turn(direction.right);
               turn(direction.right);
               rewardValues[direction.backward] += 0.1;
-              elapsedTime = moveForward();
-              currentAction = evaluate(currentAction, elapsedTime);
               break;
             case direction.left:
               turn(direction.left);
               rewardValues[direction.left] += 0.1;
-              elapsedTime = moveForward();
-              currentAction = evaluate(currentAction, elapsedTime);
               break;
         }
+
+        /* each action other than forward should get a chance to move forward to see if it hits a wall */
+        if(currentAction != direction.forward)
+        {
+        	elapsedTime = moveForward();
+        }
+
+        /* set the current action to the next action to be executed */
+        currentAction = evaluate(currentAction, elapsedTime);
     }
 }
