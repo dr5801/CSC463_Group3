@@ -67,9 +67,9 @@ float moveForward()
     motor(LEFT_MOTOR, 40);
     motor(RIGHT_MOTOR, 40);
     while( !hitWall && (timeOut > seconds()) ) 
- 	{        
+    {        
         if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
-  		{
+  	{
             hitWall = 1;
         } 
     }
@@ -77,15 +77,15 @@ float moveForward()
     
  	/* if the robot hit the wall */
     if( hitWall ) 
- 	{
+    {
  		 /* if the left sensor was touched, wait for the right sensor to touch */
         if( digital(LEFT_SENSOR) ) 
-  		{
+	{
             waitForOtherSensor(RIGHT_SENSOR);
         }
   		/* else the right sensor was touched, wait for the left sensor to touch */
         else 
-  		{
+	{
             waitForOtherSensor(LEFT_SENSOR);
         }
     }   
@@ -265,7 +265,7 @@ void main()
     while( !start_button() );
     
     while( !stop_button() ) 
- 	{
+    {
         switch(currentAction)
         {
             case direction.forward:
