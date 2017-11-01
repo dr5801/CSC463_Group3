@@ -23,7 +23,7 @@ int hitWall;
 int consecutiveTurns;
 
 /* reward values for the actions (Forward, Right, Left, Backwards) */
-float rewardValues[NUM_ACTIONS] = {0, 0, 0};
+float rewardValues[NUM_ACTIONS] = {0.0, 0.0, 0.0};
 
 
 /**
@@ -35,30 +35,30 @@ void turn(int turnDirection)
     float timeOut = 0.0;
     
     switch(turnDirection)
-    {
+      {
         case direction.right:
           bk(RIGHT_MOTOR);
-          fd(LEFT_MOTOR);
-          break;
+        fd(LEFT_MOTOR);
+        break;
         case direction.left:
           bk(LEFT_MOTOR);
-          fd(RIGHT_MOTOR);
-          break;
+        fd(RIGHT_MOTOR);
+        break;
     }
     timeOut = seconds() + 2.50;
     while(timeOut > seconds());
-   
+    
     motor(LEFT_MOTOR, 60);
     motor(RIGHT_MOTOR, 60);
     timeOut = seconds() + 1.0;
     while((timeOut > seconds()));       
     
     if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
-    {
-        rewardValues[turnDirection] -= 1.0;
+      {
+        rewardValues[turnDirection] += 1.0;
     } 
     else {
-        rewardValues[turnDirection] += 1.0;
+        rewardValues[turnDirection] -= 1.0;
     }    
 }
 
@@ -69,19 +69,23 @@ void moveForward()
 {
     float timeOut = 0.0;
     
-    hitWall = 0;
     motor(LEFT_MOTOR, 60);
     motor(RIGHT_MOTOR, 60);
     timeOut = seconds() + 1.0;
     while((timeOut > seconds()));       
     
-    if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
+    if(!(digital(LEFT_SENSOR)) && !(digital(RIGHT_SENSOR)))
     {
-        rewardValues[direction.forward] -= 1.0;
-    } 
-    else {
         rewardValues[direction.forward] += 1.0;
     }
+    else 
+    {
+        rewardValues[direction.forward] = 0.0;
+        moveBackward(2.0);
+    } 
+   
+    
+    printf("Reward forward: %f\n", rewardValues[direction.forward]);
 }
 
 /**
@@ -162,16 +166,17 @@ int getRandomActionWithHighestValue(float highestValue, int actionsWithHighestVa
     int highestValueIndexes[NUM_ACTIONS];
     int j = 0;
     for(i = 0; i < NUM_ACTIONS; i++)
-    {
+      {
         if(rewardValues[i] == highestValue)
-         {
+          {
             highestValueIndexes[j] = i;
             j++;
         }
     }
     
+    printf("actionshighestvalue : %d\n", actionsWithHighestValue-1);
     randomAction = ((int)seconds() % (actionsWithHighestValue-1));
-    printf("randomAction : %d\n", randomAction);
+    //printf("randomAction : %d\n", randomAction);
     return highestValueIndexes[randomAction];
 }
 
@@ -203,22 +208,6 @@ int getNextAction()
  */
 int evaluate(int previousAction, float elapsedTime)
 {
-    int nextState;
-    int nextAction;
-    
-    /**
-    * if a wall was hit, move backward to original position.
-    * Then select next action to transition to
-    */
-    if( hitWall ) 
-      {
-        moveBackward(elapsedTime);
-        rewardValues[previousAction] -= 0.5;
-    }
-    else 
-      {
-        rewardValues[previousAction] += 1.0;
-    }
     return getNextAction();
 }
 
@@ -229,33 +218,27 @@ void main()
 {   
     float elapsedTime;
     int currentAction = direction.forward;
-    int lastTurn = direction.forward;
+    int lastAction = direction.forward;
     
     /* waits for start button to be pressed */
     while( !start_button() );
     
     while( !stop_button() ) 
-    {
+      {
         switch(currentAction)
-        {
+          {
             case direction.forward:
-              elapsedTime = moveForward();
-              rewardValues[direction.forward] += 0.1;
+              moveForward();
+              //rewardValues[direction.forward] += 0.1;
               break;
             case direction.right:
               turn(direction.right);
-              rewardValues[direction.right] += 0.1;
+              //rewardValues[direction.right] += 0.1;
               break;
             case direction.left:
               turn(direction.left);
-              rewardValues[direction.left] += 0.1;
+              //rewardValues[direction.left] += 0.1;
               break;
-        }
-        
-        /* each action other than forward should get a chance to move forward to see if it hits a wall */
-        if(currentAction != direction.forward)
-        {
-            elapsedTime = moveForward();
         }
         
         /* set the current action to the next action to be executed */
