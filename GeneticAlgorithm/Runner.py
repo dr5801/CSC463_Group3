@@ -12,18 +12,18 @@ internal_TwoChildren = ["doTwoFarFar", "doTwoCloseClose", "doTwoCloseFar"]
 internal_SingleChild = ["closeToWall", "farFromWall"]
 unique_id_list = []
 
-"""
-Represents a Node in a tree
-"""
 @attr.s
 class Node:
+    """
+    Represents a Node in a tree
+    """
     name = attr.ib()
     depth = attr.ib(default=0)
     id = attr.ib(default=0)
     sensor = attr.ib(default=None)
     child1 = attr.ib(default=None)
     child2 = attr.ib(default=None)
-    children = attr.ib(default=attr.Factory(list))
+    parent = attr.ib(default=None)
 
 
 def generateUniqueID(length=12):
@@ -39,6 +39,7 @@ def generateUniqueID(length=12):
     unique_id_list.append(unique_id)
     return unique_id
 
+
 def getNumberOfChildren(name=None):
     """
     Returns the number of children it has based on the function name
@@ -50,6 +51,16 @@ def getNumberOfChildren(name=None):
     else:
         return 0
 
+
+def reorderDepths(root=None, depth=0, max_depth=9):
+    if depth <= max_depth:
+        if root is not None:
+            if root.depth != depth:
+                root.depth = depth
+            reorderDepths(root=root.child1, depth=depth+1)
+            reorderDepths(root=root.child2, depth=depth+1)
+
+
 def generateChildren(node=None, parent=None, id=0, depth=1, max_depth=9):
     """
     Generates the children for a specific node
@@ -57,21 +68,27 @@ def generateChildren(node=None, parent=None, id=0, depth=1, max_depth=9):
     number_children = getNumberOfChildren(node.name)
     if depth < max_depth:
         if number_children == 2:
-            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1,4), depth=depth)
+            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1,4), depth=depth, parent=node)
             generateChildren(node=node.child1, depth=depth+1)
 
-            node.child2 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth)
+            node.child2 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth, parent=node)
             generateChildren(node=node.child2, depth=depth+1)
 
         elif number_children == 1:
-            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth)
+            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth, parent=node)
             generateChildren(node=node.child1, depth=depth+1)
+        else:
+            node.child1 = None
+            node.child2 = None
     else:
         if number_children == 2:
-            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth)
-            node.child2 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth)
+            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth, parent=node)
+            node.child2 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth, parent=node)
         elif number_children == 1:
-            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth)
+            node.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), depth=depth, parent=node)
+        else:
+            node.child1 = None
+            node.child2 = None
 
 
 def buildTrees():
@@ -81,29 +98,76 @@ def buildTrees():
     roots = []
     user_choice = int(input("How many trees do you want? "))
     for number in range(user_choice):
-        roots.append(Node(name=random.choice(all_nodes), id=generateUniqueID()))
+        specialRoot = Node(name="SpecialRoot", id=generateUniqueID())
+        specialRoot.child1 = Node(name=random.choice(all_nodes), id=generateUniqueID(), sensor=randint(1, 4), parent=specialRoot)
+        roots.append(specialRoot.child1)
 
         if roots[number].name not in leaf_nodes:
             roots[number].sensor = randint(1, 4)
 
         generateChildren(node=roots[number], id=1)
-
     return roots
 
+def redirectTrees(trees=None):
+    valid = False
+    tree_ids = []
+    node1=None
+    node2=None
 
-def printTrees(trees=None):
-    """
-    Print the tree/s
-    """
-    for node in trees:
-        printNode(node=node)
+    for i in range(2):
+        valid = False
+        while not valid:
+            if i == 0:
+                tree_id = int(input("Please enter the first tree number: "))
+            else:
+                tree_id = int(input("Please enter the second tree number: "))
+
+            if tree_id not in tree_ids:
+                if tree_id <= (len(trees) - 1):
+                    node_id = str(input("Please enter the node id for that tree: "))
+                    node = findNode(root=trees[tree_id], node_id=node_id)
+                    if node is not None:
+                        if node1 is None:
+                            node1 = node
+                        else:
+                            node2 = node
+
+                        tree_ids.append(tree_id)
+                        valid = True
+                    else:
+                        print("Could not find node. Trying again... ")
+                else:
+                    print("Tree id: " + str(tree_id) + " does not exist. Trying again.... ")
+            else:
+                print("You have to enter a different tree id than the first one. Trying again... ")
+
+    print("hello")
+    randomNode = node1.parent
+    randomNode2 = node2.parent
+
+    if node1.parent.child1.id == node1.id:
+        if node2.parent.child1.id == node2.id:
+            node1.parent.child1, node2.parent.child1 = node2.parent.child1, node1.parent.child1
+        else:
+            node1.parent.child1, node2.parent.child2 = node2.parent.child2, node1.parent.child1
+    else:
+        if node2.parent.child1.id == node2.id:
+            node1.parent.child2, node2.parent.child1 = node2.parent.child1, node1.parent.child2
+        else:
+            node1.parent.child2, node2.parent.child2 = node2.parent.child2, node1.parent.child2
+
+    node1.parent, node2.parent = node2.parent, node1.parent
+
+    print ("hello")
+
+
 
 
 def findNode(root=None, node_id=""):
     current = root
     s = []
     done = False
-    node=None
+    node = None
     while not done:
         if current is not None:
             if current.id == node_id:
@@ -118,7 +182,6 @@ def findNode(root=None, node_id=""):
                 current = current.child2
             else:
                 done = True
-
     return node
 
 
@@ -143,16 +206,31 @@ def editTrees(trees=None):
             name = input("Current name: " + str(node.name) + ".......... Enter new name from the above list of functions: ")
             valid = name in all_nodes
 
-        valid = False
-        while not valid:
-            sensor = int(input("Current sensor: " + str(node.sensor) + "   .......... Enter new sensor (number must be from 1 to 4): "))
-            valid = sensor in [1, 2, 3, 4]
+        if name not in leaf_nodes:
+            valid = False
+            while not valid:
+                sensor = int(input("Current sensor: " + str(node.sensor) + "   .......... Enter new sensor (number must be from 1 to 4): "))
+                valid = sensor in [1, 2, 3, 4]
+        else:
+            sensor = 0
 
         node.name = name
         node.sensor = sensor
         print("Regenerating list from edited node ......")
         generateChildren(node=node, depth=node.depth+1)
         print("Done.")
+
+
+def printTrees(trees=None):
+    """
+    Print the tree/s
+    """
+    i=0
+    for node in trees:
+        print("\nTree: " + str(i))
+        printNode(node=node)
+        i+=1
+    return node
 
 
 def printNode(node=None, depth=0, max_depth=9, tabs=""):
@@ -167,6 +245,7 @@ def printNode(node=None, depth=0, max_depth=9, tabs=""):
     print(tabs + "|->id: " + str(node.id))
     print(tabs + "|->sensor: " + str(node.sensor))
     print(tabs + "|->depth: " + str(node.depth))
+    print(tabs + "|->parent: " + str(node.parent.name))
     print(tabs + separator)
 
     if node.child1 is not None:
@@ -179,7 +258,7 @@ if __name__ == '__main__':
     end = False
     trees = []
     while not end:
-        choice = int(input("1. Build tree, 2. Edit tree, 3. Print trees, 4. End "))
+        choice = int(input("1. Build tree, 2. Edit tree, 3. Print trees, 4. Redirect trees, 5. End "))
         if choice == 1:
             trees = buildTrees()
         elif choice == 2:
@@ -188,6 +267,13 @@ if __name__ == '__main__':
             else:
                 editTrees(trees)
         elif choice == 3:
-            printTrees(trees)
+            printTrees(trees=trees)
         elif choice == 4:
+            if len(trees) <= 1:
+                print("You need to build at least 2 trees. (1.Build tree, build 2 or more trees, then come back ;)")
+            else:
+                redirectTrees(trees=trees)
+                for root in trees:
+                    reorderDepths(root=root, depth=0)
+        elif choice == 5:
             end = True
