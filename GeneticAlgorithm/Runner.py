@@ -19,7 +19,6 @@ Represents a Node in a tree
 class Node:
     name = attr.ib()
     depth = attr.ib(default=0)
-    parent_id = attr.ib(default=0)
     id = attr.ib(default=0)
     sensor = attr.ib(default=None)
     child1 = attr.ib(default=None)
@@ -100,27 +99,27 @@ def printTrees(trees=None):
         printNode(node=node)
 
 
-def findNode(node=None, node_id="", not_found=False):
-    current = node
-    while current is not None:
-        if current.id == node_id:
-            return current
-
-        if current.child1 is None:
-            current = current.child2
-        else:
-            pre = current.child1
-            while pre.child1 is not None and pre.child2 != current:
-                pre = pre.child2
-
-            if pre.child2 is None:
-                pre.child2 = current
-                current = current.child1
+def findNode(root=None, node_id=""):
+    current = root
+    s = []
+    done = False
+    node=None
+    while not done:
+        if current is not None:
+            if current.id == node_id:
+                node = current
+                done = True
             else:
-                pre.child2 = None
+                s.append(current)
+                current = current.child1
+        else:
+            if len(s) > 0:
+                current = s.pop()
                 current = current.child2
-    return current
+            else:
+                done = True
 
+    return node
 
 
 def editTrees(trees=None):
@@ -130,7 +129,9 @@ def editTrees(trees=None):
         print("Error: not a valid id\n")
     else:
         for root in trees:
-            node = findNode(node=root, node_id=node_id)
+            node = findNode(root=root, node_id=node_id)
+            if node is not None:
+                break
 
     if node is not None:
         name = ""
