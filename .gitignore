@@ -1,3 +1,7 @@
+# ignore virtual environments
+venv/
+virtualenv/
+
 # Compiled class file
 *.class
 
