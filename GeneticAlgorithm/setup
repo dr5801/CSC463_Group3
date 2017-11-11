@@ -1,8 +1,10 @@
 #!/bin/bash
 
 echo "Setting up virtual environment..."
-python3 -m venv venv
-./venv/bin/pip install attrs
-
-
+virtualenv -p python3.6 venv
+if [ $? -eq 0 ]; then
+	./venv/bin/pip3.6 install attrs
+else
+	echo "You need to install virtualenv... run: sudo apt install virtualenv"
+fi
 
