@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "Setting up virtual environment..."
+python3 -m venv venv
+./venv/bin/pip install attrs
+
+
+
