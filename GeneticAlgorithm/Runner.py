@@ -1,3 +1,4 @@
+#!/venv/bin/python3
 import attr
 import string
 import random
