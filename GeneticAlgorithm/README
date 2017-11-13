@@ -1,0 +1,3 @@
+This needs to be run on linux and have virtualenv installed.
+
+Once on linux and virtualenv installed, run the setup script and then you can run the python file
