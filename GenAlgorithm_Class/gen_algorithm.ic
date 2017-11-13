@@ -1,0 +1,152 @@
+//TODO Set the define values
+#define THRESHOLD   
+#define LEFT_SEN    //Sensor position
+#define RIGHT_SEN   //Sensor position
+#define FRONT_LEFT  //Sensor position
+#define FRONT_RIGHT //Sensor position
+
+void moveMotors(int rightSpeed, int leftSpeed)
+{
+     motor(0, rightSpeed);
+     motor(2, leftSpeed);
+}
+
+void turnLeftNine(void)
+{
+     //TODO: Design the code to make the bot turn 90 degrees
+}
+
+void squareUp(void)
+{
+     int range = 5;
+     int value;
+     int dir;
+     if(analog(FRONT_LEFT) > analog(FRONT_RIGHT))
+     {
+          dir = 1; //Turn to the right
+     }
+     else
+     {
+          dir = 0; //Turn to the left
+     }
+
+     switch(dir)
+     {
+          case 0:
+               value = analog(FRONT_LEFT);
+               moveMotors(50, -50);
+               while(analog(FRONT_RIGHT) >= (value + range));
+               break;
+          case 1:
+               value = analog(FRONT_RIGHT);
+               moveMotors(-50, 50);
+               while(analog(FRONT_LEFT) >= (value + range));
+               break;
+     }
+}
+
+int main(void)
+{
+   while(analog(FRONT_LEFT) > THRESHOLD)
+   {
+      while(analog(FRONT_LEFT) > THRESHOLD)
+      {
+         while(analog(FRONT_RIGHT) < THRESHOLD)
+         {
+            moveMotors(-50, -50);
+         }
+      }
+      while(analog(FRONT_LEFT) > THRESHOLD)
+      {
+         while(analog(RIGHT_SEN) < THRESHOLD)
+         {
+            while(analog(FRONT_LEFT) < THRESHOLD)
+            {
+               moveMotors(50, 50);
+            }
+            while(analog(FRONT_LEFT) > THRESHOLD)
+            {
+               squareUp();
+            }
+         }
+      }
+   }
+   while(analog(LEFT_SEN) < THRESHOLD)
+   {
+      while(analog(LEFT_SEN) < THRESHOLD)
+      {
+         moveMotors(50, -50);
+      }
+      while(analog(RIGHT_SEN) < THRESHOLD)
+      {
+         while(analog(FRONT_LEFT) > THRESHOLD)
+         {
+            while(analog(FRONT_LEFT) > THRESHOLD)
+            {
+               while(analog(RIGHT_SEN) > THRESHOLD)
+               {
+                  while(analog(FRONT_RIGHT) < THRESHOLD)
+                  {
+                     moveMotors(-50, 50);
+                  }
+               }
+               while(analog(FRONT_RIGHT) < THRESHOLD)
+               {
+                  while(analog(RIGHT_SEN) > THRESHOLD)
+                  {
+                     moveMotors(-50, -50);
+                  }
+                  while(analog(RIGHT_SEN) > THRESHOLD)
+                  {
+                     while(analog(RIGHT_SEN) < THRESHOLD)
+                     {
+                        while(analog(FRONT_RIGHT) < THRESHOLD)
+                        {
+                           while(analog(RIGHT_SEN) > THRESHOLD)
+                           {
+                              while(analog(FRONT_LEFT) < THRESHOLD)
+                              {
+                                 while(analog(FRONT_RIGHT) < THRESHOLD)
+                                 {
+                                    moveMotors(50, -50);
+                                 }
+                              }
+                              while(analog(FRONT_RIGHT) > THRESHOLD)
+                              {
+                                 squareUp();
+                              }
+                           }
+                        }
+                     }
+                     while(analog(LEFT_SEN) > THRESHOLD)
+                     {
+                        while(analog(LEFT_SEN) < THRESHOLD)
+                        {
+                           while(analog(RIGHT_SEN) < THRESHOLD)
+                           {
+                              squareUp();
+                           }
+                           while(analog(FRONT_RIGHT) > THRESHOLD)
+                           {
+                              moveMotors(-50, -50);
+                              sleep(1.00000);
+                              moveMotors(50, -50);
+                              turnLeftNine();
+                           }
+                        }
+                        while(analog(LEFT_SEN) < THRESHOLD)
+                        {
+                           squareUp();
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         while(analog(FRONT_LEFT) > THRESHOLD)
+         {
+            moveMotors(50, -50);
+         }
+      }
+   }
+}
