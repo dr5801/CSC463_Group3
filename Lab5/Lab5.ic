@@ -35,22 +35,22 @@ void turn(int turnDirection)
     float timeOut = 0.0;
     
     switch(turnDirection)
-    {
+      {
         case direction.right:
           bk(RIGHT_MOTOR);
-          fd(LEFT_MOTOR);
-          break;
+        fd(LEFT_MOTOR);
+        break;
         case direction.left:
           bk(LEFT_MOTOR);
-          fd(RIGHT_MOTOR);
-          break;
+        fd(RIGHT_MOTOR);
+        break;
     }
     timeOut = seconds() + 3.0;
     while(timeOut > seconds());
     
     motor(LEFT_MOTOR, 60);
     motor(RIGHT_MOTOR, 60);
-    timeOut = seconds() + 3.0;
+    timeOut = seconds() + 2.5;
     while((timeOut > seconds()));       
     
     if(!(digital(LEFT_SENSOR)) && !(digital(RIGHT_SENSOR)))
@@ -62,7 +62,7 @@ void turn(int turnDirection)
       {
         rewardValues[turnDirection] -= 1.0;
     } 
-        
+    
 }
 
 /**
@@ -179,7 +179,7 @@ int getRandomActionWithHighestValue(float highestValue, int actionsWithHighestVa
         }
     }
     
-    printf("actionshighestvalue : %d\n", actionsWithHighestValue-1);
+    //printf("actionshighestvalue : %d\n", actionsWithHighestValue-1);
     randomAction = ((int)seconds() % (actionsWithHighestValue-1));
     return highestValueIndexes[randomAction];
 }
@@ -223,6 +223,7 @@ void main()
     float elapsedTime;
     int currentAction = direction.forward;
     int lastAction = direction.forward;
+    int *p_currentAction = &currentAction;
     
     /* waits for start button to be pressed */
     while( !start_button() );
@@ -237,18 +238,18 @@ void main()
             break;
             case direction.right:
               turn(direction.right);
-              lastTurn = direction.right;
+            lastTurn = direction.right;
             //rewardValues[direction.right] += 0.1;
             break;
             case direction.left:
               turn(direction.left);
-              lastTurn = direction.left;
+            lastTurn = direction.left;
             //rewardValues[direction.left] += 0.1;
             break;
         }
         
         /* set the current action to the next action to be executed */
         currentAction = evaluate(currentAction, elapsedTime);
-        printf("%f, %f, %f\n", rewardValues[direction.forward], rewardValues[direction.right], rewardValues[direction.left]);
+        //printf("%f, %f, %f\n", rewardValues[direction.forward], rewardValues[direction.right], rewardValues[direction.left]);
     }
 }
