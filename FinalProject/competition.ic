@@ -20,67 +20,66 @@ struct Direction
 
 /* flag for if the robot hit the wall */
 int hitWall;
+int hasObject = 0;
 
 /**
  * Turns the robot in the specific direction.
  * It turns for 2.05 seconds which is a 90 degree angle
  */
-void turn(int turnDirection)
+int turn(int turnDirection)
 {
-    float initialTime;
-    float elapsedTime;
-    initialTime = seconds();
-    while(((initialTime+2.05) > elapsedTime)) 
- {
-        switch(turnDirection)
-        {
-            case direction.right:
-              bk(RIGHT_MOTOR);
-              fd(LEFT_MOTOR);
-              break;
-            case direction.left:
-              bk(LEFT_MOTOR);
-              fd(RIGHT_MOTOR);
-              break;
-        }
-        elapsedTime = seconds();
+    float initialTime = seconds();
+    float timeElapsed;
+    switch(turnDirection)
+      {
+        case direction.right:
+          bk(RIGHT_MOTOR);
+        fd(LEFT_MOTOR);
+        break;
+        case direction.left:
+          bk(LEFT_MOTOR);
+        fd(RIGHT_MOTOR);
+        break;
     }
+    while((initialTime + 2.50) > seconds());
+    
+    /* move forward after turning */
+    timeElapsed = moveForward(5.0);
+    /* TODO: check if object is infront of us: possibly use IR, or possibly use light sensor for LED on OR BOTH */
+    ////////////////////////////////////////////////////////
+    
+    return timeElapsed;
+    /* then we need to move backward to original position at the point of the turn */
+    //moveBackward(timeElapsed);
 }
 
 /**
  * Moves the robot forward for 5 seconds or until it hits a wall.
  */
-float moveForward()
+float moveForward(float secondsToRun)
 {
-    float timeElapsed = 0.0;
-    float secondsToRun = 5.0;
     float initialTime = seconds();
     float timeOut = initialTime + secondsToRun;
-    
     hitWall = 0;
-    while( (timeOut > seconds()) && !hitWall ) 
- {
-        motor(LEFT_MOTOR, 40);
-        motor(RIGHT_MOTOR, 40);
-        
-        if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
-  {
-            hitWall = 1;
-        } 
+    fd(LEFT_MOTOR);
+    fd(RIGHT_MOTOR);
+    while((timeOut > seconds()) && !hitWall ) 
+    {
+        hitWall = (digital(LEFT_SENSOR) || digital(RIGHT_SENSOR)) 
     }
     timeElapsed = seconds() - initialTime;
     
- /* if the robot hit the wall */
+    /* if the robot hit the wall */
     if( hitWall ) 
- {
-  /* if the left sensor was touched, wait for the right sensor to touch */
+      {
+        /* if the left sensor was touched, wait for the right sensor to touch */
         if( digital(LEFT_SENSOR) ) 
-  {
+          {
             waitForOtherSensor(RIGHT_SENSOR);
         }
-  /* else the right sensor was touched, wait for the left sensor to touch */
+        /* else the right sensor was touched, wait for the left sensor to touch */
         else 
-  {
+          {
             waitForOtherSensor(LEFT_SENSOR);
         }
     }   
@@ -93,16 +92,10 @@ float moveForward()
  */
 void moveBackward(float timeToRun)
 {
-    float initialTime;
-    float timeElapsed;
-    
-    initialTime = seconds();
-    while(initialTime+timeToRun > timeElapsed) 
- {
-        motor(LEFT_MOTOR, -40);
-        motor(RIGHT_MOTOR, -40);
-        timeElapsed = seconds();
-    }    
+    float initialTime = seconds();
+    bk(LEFT_MOTOR);
+    bk(RIGHT_MOTOR);
+    while((initialTime + timeToRun) > seconds());    
 }
 
 /**
@@ -113,17 +106,17 @@ void moveBackward(float timeToRun)
 void waitForOtherSensor(int sensor) 
 {
     if( sensor == RIGHT_SENSOR ) 
- {
+      {
         off(LEFT_MOTOR);
         motor(RIGHT_MOTOR, 50);
     }
     else 
- {
+    {
         off(RIGHT_MOTOR);
         motor(LEFT_MOTOR, 50);
     }
     
- /* wait until the sensor touches the wall */
+    /* wait until the sensor touches the wall */
     while( !digital(sensor) );
 }
 
@@ -132,40 +125,40 @@ void waitForOtherSensor(int sensor)
  */
 int evaluate(int currentState, int elapsedTime)
 {
- int nextState;
- 
- /**
+    int nextState;
+    
+    /**
   * if a wall was hit, move backward to original position.
   * Then select next state to transition to
   */
- if( hitWall )
- {
-  moveBackward(elapsedTime);
-  
-  /* select next state to transition to */
-  switch(currentState)
-  {
-   case direction.forward:
-    nextState = direction.right;
-    break;
-   case direction.right:
-    nextState = direction.backward;
-    break;
-   case direction.backward:
-    nextState = direction.left;
-    break;
-   case direction.left:
-    nextState = direction.forward;
-    break;
-  }    
- }
- else 
- {
-  /* a wall wasn't hit so keep moving forward */
-  nextState = direction.forward;
- }
- 
- return nextState; 
+    if( hitWall )
+      {
+        //moveBackward(elapsedTime);
+        
+        /* select next state to transition to */
+        switch(currentState)
+          {
+            case direction.forward:
+              nextState = direction.left;
+              break;
+            case direction.right:
+              nextState = direction.backward;
+            break;
+            case direction.backward:
+              nextState = direction.left;
+            break;
+            case direction.left:
+              nextState = direction.forward;
+            break;
+        }    
+    }
+    else 
+      {
+        /* a wall wasn't hit so keep moving forward */
+        nextState = direction.forward;
+    }
+    
+    return nextState; 
 }
 
 /**
@@ -175,34 +168,34 @@ void main()
 {   
     float initialTime;
     float elapsedTime;
- int currentState = direction.forward;
+    int currentState = direction.forward;
     int lastTurn = direction.forward;
- 
+    
     /* waits for start button to be pressed */
     while( !start_button() );
     
     while( !stop_button() ) 
- {
+      {
         switch(currentState)
-        {
+          {
             case direction.forward:
-              elapsedTime = moveForward();
-     currentState = evaluate(currentState, elapsedTime);
-              break;
+              elapsedTime = moveForward(5.0);
+            currentState = evaluate(currentState, elapsedTime);
+            break;
             case direction.right:
               turn(direction.right);
-              elapsedTime = moveForward();
-              break;
+            elapsedTime = moveForward();
+            break;
             case direction.backward:
               turn(direction.right);
-              turn(direction.right);
-              elapsedTime = moveForward();
-              break;
+            turn(direction.right);
+            elapsedTime = moveForward(5.0);
+            break;
             case direction.left:
               turn(direction.left);
-     elapsedTime = moveForward();
-     currentState = evaluate(currentState, elapsedTime);
-              break;
+            elapsedTime = moveForward(5.0);
+            currentState = evaluate(currentState, elapsedTime);
+            break;
         }
     }
 }
