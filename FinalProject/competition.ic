@@ -1,0 +1,208 @@
+/**
+ * Authors: Drew Rife, Brett Pare, Michael Pulliam
+ * Professor: Dr. Girard
+ * CSC 463
+ * Final Project
+ */
+
+#define RIGHT_MOTOR 2
+#define LEFT_MOTOR 0
+#define RIGHT_SENSOR 15
+#define LEFT_SENSOR 10
+
+struct Direction 
+{
+    int forward;
+    int right;
+    int left;
+    int backward;
+} direction = {0, 1, 2, 3};
+
+/* flag for if the robot hit the wall */
+int hitWall;
+
+/**
+ * Turns the robot in the specific direction.
+ * It turns for 2.05 seconds which is a 90 degree angle
+ */
+void turn(int turnDirection)
+{
+    float initialTime;
+    float elapsedTime;
+    initialTime = seconds();
+    while(((initialTime+2.05) > elapsedTime)) 
+ {
+        switch(turnDirection)
+        {
+            case direction.right:
+              bk(RIGHT_MOTOR);
+              fd(LEFT_MOTOR);
+              break;
+            case direction.left:
+              bk(LEFT_MOTOR);
+              fd(RIGHT_MOTOR);
+              break;
+        }
+        elapsedTime = seconds();
+    }
+}
+
+/**
+ * Moves the robot forward for 5 seconds or until it hits a wall.
+ */
+float moveForward()
+{
+    float timeElapsed = 0.0;
+    float secondsToRun = 5.0;
+    float initialTime = seconds();
+    float timeOut = initialTime + secondsToRun;
+    
+    hitWall = 0;
+    while( (timeOut > seconds()) && !hitWall ) 
+ {
+        motor(LEFT_MOTOR, 40);
+        motor(RIGHT_MOTOR, 40);
+        
+        if( digital(LEFT_SENSOR) || digital(RIGHT_SENSOR) ) 
+  {
+            hitWall = 1;
+        } 
+    }
+    timeElapsed = seconds() - initialTime;
+    
+ /* if the robot hit the wall */
+    if( hitWall ) 
+ {
+  /* if the left sensor was touched, wait for the right sensor to touch */
+        if( digital(LEFT_SENSOR) ) 
+  {
+            waitForOtherSensor(RIGHT_SENSOR);
+        }
+  /* else the right sensor was touched, wait for the left sensor to touch */
+        else 
+  {
+            waitForOtherSensor(LEFT_SENSOR);
+        }
+    }   
+    
+    return timeElapsed;
+}
+
+/**
+ * move the robot backward for a specified time to run 
+ */
+void moveBackward(float timeToRun)
+{
+    float initialTime;
+    float timeElapsed;
+    
+    initialTime = seconds();
+    while(initialTime+timeToRun > timeElapsed) 
+ {
+        motor(LEFT_MOTOR, -40);
+        motor(RIGHT_MOTOR, -40);
+        timeElapsed = seconds();
+    }    
+}
+
+/**
+ * When one sensor is touched, turn off that sensor and continue to
+ * power the other sensor until it touches the wall as well. 
+ * This gets the robot directly squared.
+ */
+void waitForOtherSensor(int sensor) 
+{
+    if( sensor == RIGHT_SENSOR ) 
+ {
+        off(LEFT_MOTOR);
+        motor(RIGHT_MOTOR, 50);
+    }
+    else 
+ {
+        off(RIGHT_MOTOR);
+        motor(LEFT_MOTOR, 50);
+    }
+    
+ /* wait until the sensor touches the wall */
+    while( !digital(sensor) );
+}
+
+/**
+ * evaluates the current state, whether it hit a wall, and sets the next state
+ */
+int evaluate(int currentState, int elapsedTime)
+{
+ int nextState;
+ 
+ /**
+  * if a wall was hit, move backward to original position.
+  * Then select next state to transition to
+  */
+ if( hitWall )
+ {
+  moveBackward(elapsedTime);
+  
+  /* select next state to transition to */
+  switch(currentState)
+  {
+   case direction.forward:
+    nextState = direction.right;
+    break;
+   case direction.right:
+    nextState = direction.backward;
+    break;
+   case direction.backward:
+    nextState = direction.left;
+    break;
+   case direction.left:
+    nextState = direction.forward;
+    break;
+  }    
+ }
+ else 
+ {
+  /* a wall wasn't hit so keep moving forward */
+  nextState = direction.forward;
+ }
+ 
+ return nextState; 
+}
+
+/**
+ * main method to run the robot 
+ */
+void main() 
+{   
+    float initialTime;
+    float elapsedTime;
+ int currentState = direction.forward;
+    int lastTurn = direction.forward;
+ 
+    /* waits for start button to be pressed */
+    while( !start_button() );
+    
+    while( !stop_button() ) 
+ {
+        switch(currentState)
+        {
+            case direction.forward:
+              elapsedTime = moveForward();
+     currentState = evaluate(currentState, elapsedTime);
+              break;
+            case direction.right:
+              turn(direction.right);
+              elapsedTime = moveForward();
+              break;
+            case direction.backward:
+              turn(direction.right);
+              turn(direction.right);
+              elapsedTime = moveForward();
+              break;
+            case direction.left:
+              turn(direction.left);
+     elapsedTime = moveForward();
+     currentState = evaluate(currentState, elapsedTime);
+              break;
+        }
+    }
+}
