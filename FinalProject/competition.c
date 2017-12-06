@@ -1,4 +1,4 @@
-/**
+/*
  * Authors: Drew Rife, Brett Pare, Michael Pulliam
  * Professor: Dr. Girard
  * CSC 463
@@ -10,7 +10,7 @@
 #define GRAB_MOTOR 1
 #define LEFT_IR 4 //NEED TO UPDATE THIS
 #define RIGHT_IR 5 //NEED TO UPDATE THIS
-#define FRONT_IR 7 //NEED TO UPDATE THIS
+#define FRONT_LIGHT 7 //NEED TO UPDATE THIS
 #define UPHILL 0
 #define DOWNHILL 1
 #define LEFT 0
@@ -30,14 +30,12 @@ float fuzzy;
 ///////////////////////////////////////////
 
 int transporting = FALSE;
-int obtaining = FALSE; //current going to get a block
-int gathered = FALSE; //true when obtained a block
 int directionOfTravel = UPHILL;
 int sideChosen = LEFT;
 int clawClosed = FALSE;
 int objectsDelivered = 0;
 
-/**
+/*
  * Turns the robot in the specific direction for a brief time while ignoring downward IR sensors, but stops when it hits a line again
  * TL;DR switches from one line to another in the specified direction
  */
@@ -77,7 +75,7 @@ void turn(int turnDirection)
     alloff();
 }
 
-/**
+/*
  * Calculate the absolute value of an input floating point value
  */
 float abs(float input)
@@ -92,7 +90,7 @@ float abs(float input)
     }
 }
 
-/**
+/*
  * Obtain values from the light sensors and save the values in an array 
  */
 void getSensorValues()
@@ -101,7 +99,7 @@ void getSensorValues()
     sensorValues[1] = (float)analog(RIGHT_IR);
 }
 
-/**
+/*
  * Find the difference between the sensor values
  */
 void calculateDifference()
@@ -114,7 +112,7 @@ void calculateDifference()
     fuzzy = 1.0 - (abs(difference)/255.0) * MOTOR_RATIO;
 }
 
-/**
+/*
  * Calculate the resulting motor values
  */
 void calculateMotorSpeeds()
@@ -211,7 +209,6 @@ void openClaw()
 	while((currentTime + 3) > seconds());
 	alloff();
 	clawClosed = FALSE;
-	gathered = TRUE;
 	transporting = TRUE;
     }
 }
@@ -228,10 +225,9 @@ void closeClaw()
     }
 
     motor(GRAB_MOTOR, 40);
-    while(analog(FRONT_IR) > 10);
+    while(analog(FRONT_LIGHT) > 10);
     alloff();
     clawClosed = TRUE;
-    gathered = TRUE;
     transporting = TRUE;
 }
 
@@ -240,14 +236,14 @@ void closeClaw()
  */
 void obtainObject()
 {
-    obtaining = TRUE;
     turn(getDirectionForLight());
      
     //TODO: 30 might need to be changed for how close it gets the light
-    while(analog(FRONT_IR) > 30)
+    while(analog(FRONT_LIGHT) > 30)
     {
 	    moveForward();
     }
+    alloff();
 
     closeClaw();
 }
@@ -301,9 +297,7 @@ void transporting()
 	moveForward();
     }
 
-    transporting = FALSE;
-    gathered = FALSE;
-    obtaining = FALSE;  
+    transporting = FALSE;  
     objectsDelivered++; 
 }
 
@@ -323,7 +317,6 @@ int main()
 	    else
 	    {
 	        transporting();
-		turn(RIGHT);
 		directionOfTravel = DOWNHILL;
 	    }
 	}
