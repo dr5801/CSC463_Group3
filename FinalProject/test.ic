@@ -1,0 +1,8 @@
+int main()
+{
+    while(!start_button());
+    while(1)
+      {
+        printf("%d\n", analog(5));
+    }
+}

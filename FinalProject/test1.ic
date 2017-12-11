@@ -1,0 +1,11 @@
+#define LEFT_LIGHT 2
+#define RIGHT_LIGHT 6
+
+int main()
+{
+    while(1)
+      {
+        printf("LEFT: %d, RIGHT: %d\n", analog(LEFT_LIGHT), analog(RIGHT_LIGHT));
+        sleep(3.0);
+    }
+}
