@@ -36,8 +36,8 @@ int transporting = FALSE;
 int directionOfTravel = UPHILL;
 int sideChosen = LEFT;
 int clawClosed = FALSE;
-int objectsDelivered = 0;
-int intersection = 0;
+int objectsDelivered = 2;
+int intersection = 4;
 int atDropZone = FALSE;
 int terminate = FALSE;
 
@@ -50,25 +50,55 @@ void turn(int turnDirection)
     float initialTime;
     sideChosen = turnDirection;
     switch(turnDirection)
-    {
+      {
         case LEFT:
           motor(RIGHT_MOTOR, 90);
-        motor(LEFT_MOTOR, -15);
+        motor(LEFT_MOTOR, -20);
         break;
         case RIGHT:
           motor(LEFT_MOTOR, 90);
-        motor(RIGHT_MOTOR, -15);
+        motor(RIGHT_MOTOR, -20);
         break;
     }
     initialTime = seconds();
     while((initialTime + 1.75) > seconds()); //Get off the line
     
     if( turnDirection == LEFT )
-    {
+      {
         while(analog(RIGHT_IR) < 180);
     }
     else
-    {
+      {
+        while(analog(LEFT_IR) < 180);
+    }
+    
+    alloff();
+}
+
+void turnSharp(int turnDirection)
+{
+    float initialTime;
+    sideChosen = turnDirection;
+    switch(turnDirection)
+      {
+        case LEFT:
+          motor(RIGHT_MOTOR, 80);
+          motor(LEFT_MOTOR, -80);
+        break;
+        case RIGHT:
+          motor(LEFT_MOTOR, 80);
+          motor(RIGHT_MOTOR, -80);
+        break;
+    }
+    initialTime = seconds();
+    while((initialTime + 1.75) > seconds()); //Get off the line
+    
+    if( turnDirection == LEFT )
+      {
+        while(analog(RIGHT_IR) < 180);
+    }
+    else
+      {
         while(analog(LEFT_IR) < 180);
     }
     
@@ -151,13 +181,13 @@ void calculateMotorSpeeds()
 {
     float temp;
     if(difference < 0.0) 
-    {
+      {
         /* if the left sensor is reading a higher value than the right, calculate the speed for the left motor */
         motorSpeeds[LEFT] = DEFAULT_MOTOR_SPEED;
         motorSpeeds[RIGHT] = DEFAULT_MOTOR_SPEED * fuzzy;
     }
     else if(difference > 0.0)
-    {
+      {
         /* if the left sensor is reading a lower value than the right, calculate the speed for the right motor */
         motorSpeeds[RIGHT] = DEFAULT_MOTOR_SPEED;
         motorSpeeds[LEFT] = DEFAULT_MOTOR_SPEED * fuzzy;
@@ -169,8 +199,8 @@ void calculateMotorSpeeds()
         motorSpeeds[RIGHT] = DEFAULT_MOTOR_SPEED;
     } 
 }
-    
-    /*
+
+/*
  * moves the robot forward
  */
 void moveForward()
@@ -178,17 +208,17 @@ void moveForward()
     getSensorValues();
     calculateDifference();
     calculateMotorSpeeds();
-        
+    
     motor(LEFT_MOTOR,(int)motorSpeeds[0]);
     motor(RIGHT_MOTOR,(int)motorSpeeds[1]);
 }   
-    
-    
+
+
 /*
 * Checks both downward facing IR sensors, and if they both report a large value, that means we are at an intersection
 */
 int checkIntersection()
-  {
+{
     return ((analog(LEFT_IR) > 200) && (analog(RIGHT_IR) > 200));
 }
 
@@ -196,7 +226,7 @@ int checkIntersection()
 * returns true or false if one of the side sensors detects light from a block 
 */
 int foundLight()
-  {
+{
     return (analog(LEFT_LIGHT) < 225 || analog(RIGHT_LIGHT) < 225);
 }
 
@@ -204,13 +234,13 @@ int foundLight()
 * returns the direction in which the light source is from
 */
 int getDirectionForLight()
-  {
+{
     if(analog(LEFT_LIGHT) < analog(RIGHT_LIGHT))
-    {
+      {
         return LEFT;
     }
     else
-    {
+      {
         return RIGHT;
     }
 }
@@ -220,7 +250,7 @@ int getDirectionForLight()
 * TODO: probably need to adjust time of this open**********
 */
 void openClaw()
-  {
+{
     float currentTime;
     if(clawClosed)
       {
@@ -239,7 +269,7 @@ void openClaw()
 * the claw closes until the block with the light source is reading a low enough value for the light sensor (the lower the value the closer it is)
 */
 void closeClaw()
-  {
+{
     float time;
     if(clawClosed)
       {
@@ -257,11 +287,11 @@ void closeClaw()
 * obtains the object
 */
 void obtainObject()
-  {
+{
     turn(getDirectionForLight());
     
     //TODO: 30 might need to be changed for how close it gets the light
-    while(analog(FRONT_LIGHT) > 205)
+    while(analog(FRONT_LIGHT) > 100)
       {
         moveForward();
     }
@@ -274,45 +304,44 @@ void obtainObject()
 * when the robot doesn't have an object, it need to keep move foward until it finds the intersection
 */
 void notTransporting()
-  {
+{
     float timeOut;
-
+    
     if(!atDropZone)
-    {
-    	while(!checkIntersection())
-    	{
-    		moveForward();
-    	}
-
-    	if(directionOfTavel == UPHILL)
-    	{
-    		intersection++;
-    	}
-    	else
-    	{
-    		intersection--;
-    	}
-    	alloff();
+      {
+        while(!checkIntersection())
+          {
+            moveForward();
+        }
+        
+        if(directionOfTravel == UPHILL)
+          {
+            intersection++;
+        }
+        else
+          {
+            intersection--;
+        }
     }
     else
-    {
-    	bk(RIGHT_MOTOR);
-    	bk(LEFT_MOTOR);
-    	while(!checkIntersection());
-    	alloff();
+      {
+        bk(RIGHT_MOTOR);
+        bk(LEFT_MOTOR);
+        while(!checkIntersection());
+        alloff();
     }
-
+    
     timeOut = seconds() + 1.0;
-    while(timeout > seconds());
+    while(timeOut > seconds());
     if(foundLight())
-    {
-    	obtainObject();
-    	transporting = TRUE;
+      {
+        obtainObject();
+        transporting = TRUE;
     }
     else if(!foundLight() && atDropZone)
-    {
-    	turn180();
-    	atDropZone = FALSE;
+      {
+        turn180(RIGHT);
+        atDropZone = FALSE;
     }
 }
 
@@ -320,7 +349,7 @@ void notTransporting()
 * object is obtained and the robot is officially transporting the block now
 */
 void transportingObject()
-  {
+{
     float timeOut;
     
     // object is obtained, turn 180* to head back
@@ -331,16 +360,25 @@ void transportingObject()
       {
         moveForward();
     }
+    timeOut = seconds() + 1.5;
+    while(timeOut > seconds());
     alloff();
     
     // turn to reface forward towards block dropzone
-    turn(sideChosen);
+    if(directionOfTravel == UPHILL)
+      {
+        turnSharp(sideChosen);
+    }
+    else
+      {
+        turnSharp(!sideChosen);
+    }
     directionOfTravel = UPHILL;
     
     /*
- * have the robot move forward until it gets the last intersection (drop zone)
- */
-    while(intersection != NUM_INTERSECTIONS)
+     * have the robot move forward until it gets the last intersection (drop zone)
+     */
+    while(intersection < NUM_INTERSECTIONS)
       {
         while(!checkIntersection())
           {
@@ -349,19 +387,11 @@ void transportingObject()
         }
         
         intersection++;
-        if(intersection < NUM_INTERSECTIONS)
-        {
-            timeOut = seconds() + 1.0;
-            while(timeOut > seconds());
-        }
+        timeOut = seconds() + 1.0;
+        while(timeOut > seconds());
     }
     
-    // found the drop off, move forward a tiny bit
     atDropZone = TRUE;
-    fd(RIGHT_MOTOR);
-    fd(LEFT_MOTOR);
-    timeOut = seconds() + 1.0;
-    while(timeOut > seconds());
     alloff();
     
     openClaw();    
@@ -373,7 +403,7 @@ void transportingObject()
  * backups the robot
  */
 void backUp()
-  {
+{
     bk(LEFT_MOTOR);
     bk(RIGHT_MOTOR);
 }
@@ -383,25 +413,25 @@ void backUp()
  */
 void makeItHome()
 {
-	float timeOut;
-
-	// backup to last intersection of drop zone
-	bk(RIGHT_MOTOR);
-	bk(LEFT_MOTOR);
-	while(!checkIntersection());
-
-	// turn 180
-	turn180();
-
-	// go back to starting intersection
-	while(intersection > 0)
-	{
-		moveForward();
-
-		// make sure the robot croses the finish line
-		timeOut = seconds() + 2.0;
-		while(timeOut > seconds());
-	}
+    float timeOut;
+    
+    // backup to last intersection of drop zone
+    bk(RIGHT_MOTOR);
+    bk(LEFT_MOTOR);
+    while(!checkIntersection());
+    
+    // turn 180
+    turn180(RIGHT);
+    
+    // go back to starting intersection
+    while(intersection > 0)
+      {
+        moveForward();
+        
+        // make sure the robot croses the finish line
+        timeOut = seconds() + 2.0;
+        while(timeOut > seconds());
+    }
 }
 
 /*
@@ -409,7 +439,7 @@ void makeItHome()
  * the program should be terminated
  */
 void monitorStopButton()
-  {
+{
     while(!terminate)
       {
         terminate = stop_button();
@@ -421,7 +451,7 @@ void monitorStopButton()
  * main method to run the robot 
  */
 int main() 
-  {   
+{   
     int pid = start_process(monitorStopButton());
     while(!start_button());
     
@@ -441,7 +471,7 @@ int main()
     if(!terminate)
       {
         //last object was just delivered so backup all the way to the start point
-     	makeItHome();
+        makeItHome();
     }
     
     kill_process(pid);

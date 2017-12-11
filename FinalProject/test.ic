@@ -1,8 +1,25 @@
+/*
+* closes the claw to obtain the block.
+* the claw closes until the block with the light source is reading a low enough value for the light sensor (the lower the value the closer it is)
+*/
+void closeClaw()
+{
+    float time;
+    
+    motor(3, -30);
+    time = seconds();
+    while((time + 1.0) > seconds());
+    alloff();
+}
+
+
+#define FRONT_LIGHT 5
 int main()
 {
-    while(!start_button());
-    while(1)
-      {
-        printf("%d\n", analog(5));
-    }
+    fd(0);
+    fd(2);
+    while(analog(FRONT_LIGHT) > 110);
+    alloff();
+    
+    closeClaw();
 }
